@@ -18,7 +18,7 @@ export default function RootLayout({
                         <h1>KezBot</h1>
                         <ThemeToggle />
                     </Header>
-                    <main className="px-4">{children}</main>
+                    <main>{children}</main>
                 </body>
             </Html>
         </ThemeContextProvider>
