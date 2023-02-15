@@ -13,12 +13,12 @@ export default function RootLayout({
         <ThemeContextProvider>
             <Html>
                 <head />
-                <body className="bg-grey-light dark:bg-grey-dark">
+                <body className="flex h-full flex-col bg-grey-light dark:bg-grey-dark">
                     <Header>
                         <h1>KezBot</h1>
                         <ThemeToggle />
                     </Header>
-                    <main>{children}</main>
+                    <main className="flex h-full flex-col">{children}</main>
                 </body>
             </Html>
         </ThemeContextProvider>

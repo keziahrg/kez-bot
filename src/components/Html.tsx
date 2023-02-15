@@ -11,7 +11,7 @@ export const Html = ({ children }: HtmlProps) => {
     const { themeColourScheme } = useContext(ThemeContext)
 
     return (
-        <html lang="en" className={themeColourScheme}>
+        <html lang="en" className={`${themeColourScheme} flex h-full flex-col`}>
             {children}
         </html>
     )
