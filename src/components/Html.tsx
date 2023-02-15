@@ -1,17 +1,17 @@
 'use client'
 
-import { ThemeContext } from '@/context/ThemeContext'
-import { ReactNode, useContext } from 'react'
+import { useThemeContext } from '@/context/ThemeContext'
+import { ReactNode } from 'react'
 
 interface HtmlProps {
     children: ReactNode | ReactNode[]
 }
 
 export const Html = ({ children }: HtmlProps) => {
-    const { themeColourScheme } = useContext(ThemeContext)
+    const theme = useThemeContext()
 
     return (
-        <html lang="en" className={`${themeColourScheme} flex h-full flex-col`}>
+        <html lang="en" className={`${theme} flex h-full flex-col`}>
             {children}
         </html>
     )

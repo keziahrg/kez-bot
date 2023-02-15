@@ -1,21 +1,31 @@
 'use client'
 
-import { ThemeColourScheme, ThemeContext } from '@/context/ThemeContext'
-import { useContext } from 'react'
+import {
+    ThemeColourScheme,
+    useSetThemeContext,
+    useThemeContext,
+} from '@/context/ThemeContext'
+
+const toggleTheme = (theme: ThemeColourScheme): ThemeColourScheme => {
+    if (theme === ThemeColourScheme.DARK) return ThemeColourScheme.LIGHT
+
+    return ThemeColourScheme.DARK
+}
 
 export const ThemeToggle = () => {
-    const { toggleTheme, themeColourScheme } = useContext(ThemeContext)
+    const theme = useThemeContext()
+    const setTheme = useSetThemeContext()
+
+    const handleOnClick = () => {
+        setTheme(toggleTheme(theme))
+    }
 
     return (
         <button
-            onClick={toggleTheme}
-            aria-label={`Change colour preference to ${
-                themeColourScheme === ThemeColourScheme.LIGHT
-                    ? ThemeColourScheme.DARK
-                    : ThemeColourScheme.LIGHT
-            }`}
+            onClick={handleOnClick}
+            aria-label={`Change colour preference to ${toggleTheme(theme)}`}
         >
-            {themeColourScheme === ThemeColourScheme.LIGHT ? (
+            {theme === ThemeColourScheme.LIGHT ? (
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"

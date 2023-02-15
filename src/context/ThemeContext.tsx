@@ -1,43 +1,43 @@
 'use client'
 
-import { createContext, ReactNode, useState } from 'react'
+import { useTheme } from '@/hooks/useTheme'
+import {
+    createContext,
+    Dispatch,
+    ReactNode,
+    SetStateAction,
+    useContext,
+} from 'react'
 
 export enum ThemeColourScheme {
     LIGHT = 'light',
     DARK = 'dark',
 }
 
-export interface ThemeContextValue {
-    toggleTheme: () => void
-    themeColourScheme: ThemeColourScheme
+const ThemeContext = createContext<ThemeColourScheme>(ThemeColourScheme.LIGHT)
+const SetThemeContext = createContext<
+    Dispatch<SetStateAction<ThemeColourScheme>>
+>(() => {})
+
+export function useThemeContext() {
+    return useContext(ThemeContext)
 }
 
-export const ThemeContext = createContext<ThemeContextValue>({
-    toggleTheme: () => {},
-    themeColourScheme: ThemeColourScheme.LIGHT,
-})
+export function useSetThemeContext() {
+    return useContext(SetThemeContext)
+}
 
 interface ThemeContextProviderProps {
     children: ReactNode | ReactNode[]
 }
 
-export const ThemeContextProvider = ({
-    children,
-}: ThemeContextProviderProps) => {
-    const [themeColourScheme, setThemeColourScheme] =
-        useState<ThemeColourScheme>(ThemeColourScheme.LIGHT)
-
-    const toggleTheme = () => {
-        setThemeColourScheme((prevThemeColourScheme) =>
-            prevThemeColourScheme === ThemeColourScheme.LIGHT
-                ? ThemeColourScheme.DARK
-                : ThemeColourScheme.LIGHT
-        )
-    }
-
+export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
+    const [theme, setTheme] = useTheme()
     return (
-        <ThemeContext.Provider value={{ toggleTheme, themeColourScheme }}>
-            {children}
+        <ThemeContext.Provider value={theme}>
+            <SetThemeContext.Provider value={setTheme}>
+                {children}
+            </SetThemeContext.Provider>
         </ThemeContext.Provider>
     )
 }
