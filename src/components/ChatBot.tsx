@@ -26,7 +26,7 @@ export const ChatBot = () => {
                     ariaLabel={`At 2:42pm you said:`}
                 />
             </Conversation>
-            <div className="sticky bottom-0 right-0 left-0 bg-white bg-opacity-60 pt-4 pb-8 backdrop-blur-md dark:bg-black  dark:bg-opacity-60">
+            <div className="sticky bottom-0 right-0 left-0 bg-white bg-opacity-60 pt-4 pb-8 backdrop-blur-md dark:bg-black dark:bg-opacity-60 dark:text-white md:pt-8 md:pb-16">
                 <form
                     ref={formRef}
                     onSubmit={handleFormSubmission}
