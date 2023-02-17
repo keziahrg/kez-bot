@@ -1,31 +1,23 @@
 'use client'
 
-import {
-    ThemeColourScheme,
-    useSetThemeContext,
-    useThemeContext,
-} from '@/context/ThemeContext'
-
-const toggleTheme = (theme: ThemeColourScheme): ThemeColourScheme => {
-    if (theme === ThemeColourScheme.DARK) return ThemeColourScheme.LIGHT
-
-    return ThemeColourScheme.DARK
-}
+import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 
 export const ThemeToggle = () => {
-    const theme = useThemeContext()
-    const setTheme = useSetThemeContext()
+    const [mounted, setMounted] = useState<boolean>(false)
+    const { theme, setTheme } = useTheme()
 
-    const handleOnClick = () => {
-        setTheme(toggleTheme(theme))
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return null
     }
 
     return (
-        <button
-            onClick={handleOnClick}
-            aria-label={`Change colour preference to ${toggleTheme(theme)}`}
-        >
-            {theme === ThemeColourScheme.LIGHT ? (
+        <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+            {theme === 'light' ? (
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
