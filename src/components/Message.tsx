@@ -9,7 +9,10 @@ export const Message = ({
     className = '',
     ariaLabel,
 }: MessageProps) => (
-    <section aria-label={ariaLabel} className={`rounded-3xl p-4 ${className}`}>
+    <section
+        aria-label={ariaLabel}
+        className={`rounded-3xl p-4 text-black ${className}`}
+    >
         {message}
     </section>
 )
