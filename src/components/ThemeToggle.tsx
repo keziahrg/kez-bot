@@ -16,7 +16,12 @@ export const ThemeToggle = () => {
     }
 
     return (
-        <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+        <button
+            aria-label={`Change theme from ${theme} to ${
+                theme === 'light' ? 'dark' : 'light'
+            }`}
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+        >
             {theme === 'light' ? (
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
