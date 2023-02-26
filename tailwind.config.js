@@ -11,7 +11,19 @@ module.exports = {
             'grey-light': '#F1F1F1',
             'grey-dark': '#252429',
         },
-        extend: {},
+        extend: {
+            keyframes: {
+                ellipsis: {
+                    '0%': { width: '0ch' },
+                    '33%': { width: '1ch' },
+                    '66%': { width: '2ch' },
+                    '99%': { width: '3ch' },
+                },
+            },
+            animation: {
+                ellipsis: 'ellipsis 1.5s linear infinite',
+            },
+        },
     },
     plugins: [],
 }
