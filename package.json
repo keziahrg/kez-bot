@@ -11,13 +11,13 @@
         "prettier": "prettier --write --ignore-unknown .",
         "prettier:check": "prettier --check --ignore-unknown .",
         "test": "yarn prettier:check && yarn lint",
-        "supabase:generate-types": "dotenv -- cross-var npx supabase gen types typescript --project-id %NEXT_PUBLIC_SUPABASE_PROJECT_ID% --schema public > src/types/supabase.ts"
-    },
-    "git": {
-        "pre-commit": "lint-staged"
+        "supabase:generate-types": "npx supabase gen types typescript --project-id \"fsbpogvfivdrdbwedqeq\" > src/types/supabase.ts"
     },
     "lint-staged": {
         "*": "prettier --write --ignore-unknown"
+    },
+    "git": {
+        "pre-commit": "lint-staged"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.8.0",
