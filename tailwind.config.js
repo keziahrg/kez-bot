@@ -13,15 +13,29 @@ module.exports = {
         },
         extend: {
             keyframes: {
-                ellipsis: {
-                    '0%': { width: '0ch' },
-                    '33%': { width: '1ch' },
-                    '66%': { width: '2ch' },
-                    '99%': { width: '3ch' },
+                'dot-1': {
+                    '0%': { scale: '0' },
+                    '33%': { scale: '1' },
+                    '66%': { scale: '1' },
+                    '99%': { scale: '1' },
+                },
+                'dot-2': {
+                    '0%': { scale: '0' },
+                    '33%': { scale: '0' },
+                    '66%': { scale: '1' },
+                    '99%': { scale: '1' },
+                },
+                'dot-3': {
+                    '0%': { scale: '0' },
+                    '33%': { scale: '0' },
+                    '66%': { scale: '0' },
+                    '99%': { scale: '1' },
                 },
             },
             animation: {
-                ellipsis: 'ellipsis 1.5s linear infinite',
+                'dot-1': 'dot-1 1s linear infinite',
+                'dot-2': 'dot-2 1s linear infinite',
+                'dot-3': 'dot-3 1s linear infinite',
             },
         },
     },

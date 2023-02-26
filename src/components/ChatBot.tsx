@@ -139,7 +139,7 @@ export const ChatBot = () => {
     }
 
     return (
-        <div className="flex h-full flex-col">
+        <>
             <Conversation>
                 <Message
                     className="rounded-bl-none bg-purple"
@@ -211,6 +211,6 @@ export const ChatBot = () => {
                     </button>
                 </form>
             </div>
-        </div>
+        </>
     )
 }

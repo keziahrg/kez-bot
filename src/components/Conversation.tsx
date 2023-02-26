@@ -10,7 +10,7 @@ export const Conversation = ({ children }: ConversationProps) => (
         aria-live="polite"
         tabIndex={0}
         aria-label="Chatbot conversation"
-        className="relative mx-auto flex h-full w-full max-w-xl flex-col gap-4 px-4 py-8 md:py-16"
+        className="relative mx-auto flex h-auto w-full max-w-xl flex-grow flex-col gap-4 overflow-x-hidden overflow-y-scroll px-4 py-8 md:py-16"
     >
         {children}
     </section>

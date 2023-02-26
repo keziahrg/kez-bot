@@ -11,7 +11,7 @@ export default function RootLayout({
 }) {
     return (
         <ServerThemeProvider attribute="class">
-            <html lang="en" className="flex h-full flex-col">
+            <html lang="en" className="h-full">
                 <head />
                 <body className="flex h-full flex-col bg-grey-light dark:bg-grey-dark">
                     <ThemeProvider attribute="class">
@@ -20,7 +20,9 @@ export default function RootLayout({
                             <ThemeToggle />
                         </Header>
                     </ThemeProvider>
-                    <main className="flex h-full flex-col">{children}</main>
+                    <main className="flex h-full flex-grow flex-col overflow-hidden">
+                        {children}
+                    </main>
                 </body>
             </html>
         </ServerThemeProvider>
