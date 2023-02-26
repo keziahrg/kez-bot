@@ -2,7 +2,7 @@
 
 import { supabaseClient } from '@/lib/supabase'
 import OneLine from 'oneline'
-import { FormEvent, useRef, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import stripIndent from 'strip-indent'
 import { Conversation } from './Conversation'
 import { Input } from './Input'
@@ -19,6 +19,7 @@ type Message = {
 export const ChatBot = () => {
     const formRef = useRef<HTMLFormElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+    const messagesEndRef = useRef<HTMLDivElement>(null)
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -138,6 +139,14 @@ export const ChatBot = () => {
         setIsLoading(false)
     }
 
+    useEffect(() => {
+        const scrollToBottom = () => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+
+        scrollToBottom()
+    }, [messages])
+
     return (
         <>
             <Conversation>
@@ -162,6 +171,7 @@ export const ChatBot = () => {
                         />
                     )
                 })}
+                <div ref={messagesEndRef} />
                 {isLoading ? <Loading /> : null}
             </Conversation>
             <div className="sticky bottom-0 right-0 left-0 bg-white bg-opacity-60 pt-4 pb-8 backdrop-blur-md dark:bg-black dark:bg-opacity-60 dark:text-white md:pt-8 md:pb-16">
