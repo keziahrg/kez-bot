@@ -10,6 +10,7 @@ import { Message } from './Message'
 import GPT3Tokenizer from 'gpt3-tokenizer'
 import { openaiApi } from '@/lib/openai'
 import { Loading } from './Loading'
+import { format } from 'date-fns'
 
 type Message = {
     text: string
@@ -28,14 +29,13 @@ export const ChatBot = () => {
         e.preventDefault()
 
         const question = inputRef.current?.value ?? ''
+        const questionTime = format(new Date(), 'k:mm:ss aaaa')
 
         setMessages((prevMessages) => [
             ...prevMessages,
             {
                 text: `<p>${question}</p>`,
-                ariaLabel: `At ${new Date().toLocaleTimeString(
-                    'en-NZ'
-                )} you said:`,
+                ariaLabel: `At ${questionTime} you said:`,
             },
         ])
 
@@ -119,7 +119,7 @@ export const ChatBot = () => {
         const decoder = new TextDecoder()
         let done = false
         let answer = ''
-
+        const answerTime = format(new Date(), 'k:mm:ss aaaa')
         while (!done) {
             const { value, done: doneReading } = await reader.read()
             done = doneReading
@@ -131,9 +131,7 @@ export const ChatBot = () => {
             ...prevMessages,
             {
                 text: answer,
-                ariaLabel: `At ${new Date().toLocaleTimeString(
-                    'en-NZ'
-                )} KezBot said:`,
+                ariaLabel: `At ${answerTime} KezBot said:`,
             },
         ])
         setIsLoading(false)
@@ -153,9 +151,7 @@ export const ChatBot = () => {
                 <Message
                     className="rounded-bl-none bg-purple"
                     message="<p>Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work.</p><br/><p>Powered by OpenAI, Supabase, Next.js, and Tailwind CSS, I'm here to provide accurate and helpful information.</p>"
-                    ariaLabel={`At ${new Date().toLocaleTimeString(
-                        'en-NZ'
-                    )} KezBot said:`}
+                    ariaLabel="KezBot said:"
                 />
                 {messages.map((message, i) => {
                     return (

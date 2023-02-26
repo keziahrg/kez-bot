@@ -19,7 +19,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const stream = await openAiStream(payload)
-    return new Response(stream)
+    return new Response(stream, {
+        headers: { 'Content-Type': 'text/event-stream' },
+    })
 }
 
 export default handler
