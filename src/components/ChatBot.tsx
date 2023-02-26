@@ -1,14 +1,9 @@
 'use client'
 
-import { supabaseClient } from '@/lib/supabase'
-import OneLine from 'oneline'
 import { FormEvent, useEffect, useRef, useState } from 'react'
-import stripIndent from 'strip-indent'
 import { Conversation } from './Conversation'
 import { Input } from './Input'
 import { Message } from './Message'
-import GPT3Tokenizer from 'gpt3-tokenizer'
-import { openaiApi } from '@/lib/openai'
 import { Loading } from './Loading'
 import { format } from 'date-fns'
 
@@ -41,70 +36,12 @@ export const ChatBot = () => {
 
         formRef.current?.reset()
 
-        // OpenAI recommends replacing newlines with spaces for best results
-        const sanitisedQuestion = question.replace(/\n/g, ' ')
-
-        // Generate a one-time embedding for the query itself
-        const embeddingResponse = await openaiApi.createEmbedding({
-            model: 'text-embedding-ada-002',
-            input: sanitisedQuestion,
-        })
-
-        const [{ embedding }] = embeddingResponse.data.data
-
-        const { data: documents } = await supabaseClient.rpc(
-            'match_documents',
-            {
-                query_embedding: embedding,
-                similarity_threshold: 0.8,
-                match_count: 3,
-            }
-        )
-
-        const tokenizer = new GPT3Tokenizer({ type: 'gpt3' })
-        let tokenCount = 0
-        let contextInformation = ''
-
-        // Concat matched documents
-        if (documents) {
-            for (let i = 0; i < documents.length; i++) {
-                const document = documents[i]
-                const content = document.content
-                const encoded = tokenizer.encode(content)
-                tokenCount += encoded.text.length
-
-                // Limit context to max 1500 tokens (configurable)
-                if (tokenCount > 1500) {
-                    break
-                }
-
-                contextInformation += `${content.trim()}\n---\n`
-            }
-        }
-
-        const prompt = stripIndent(`
-            ${OneLine`You are a very enthusiastic chat bot built to answer questions about Keziah Rackley-Gale. You love
-            to help people! Given the following information about Keziah Rackley-Gale, answer the question using only that information,
-            outputted in HTML format. If you are unsure and the answer
-            is not explicitly written in the information, say
-            "Sorry, I haven't been taught the answer to that question :("`}
-
-            Context information:
-            ${contextInformation}
-
-            Question: """
-            ${question}
-            """
-
-            Answer as HTML:
-          `)
-
         const response = await fetch('/api/completion', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ prompt }),
+            body: JSON.stringify({ question }),
         })
 
         if (!response.ok) {

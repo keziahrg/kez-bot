@@ -1,4 +1,3 @@
-import { openaiApi } from '@/lib/openai'
 import {
     createParser,
     ParsedEvent,
