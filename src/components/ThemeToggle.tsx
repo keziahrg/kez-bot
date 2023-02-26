@@ -7,6 +7,8 @@ export const ThemeToggle = () => {
     const [mounted, setMounted] = useState<boolean>(false)
     const { theme, setTheme } = useTheme()
 
+    const handleOnClick = () => setTheme(theme === 'light' ? 'dark' : 'light')
+
     useEffect(() => {
         setMounted(true)
     }, [])
@@ -20,7 +22,7 @@ export const ThemeToggle = () => {
             aria-label={`Change theme from ${theme} to ${
                 theme === 'light' ? 'dark' : 'light'
             }`}
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            onClick={handleOnClick}
         >
             {theme === 'light' ? (
                 <svg

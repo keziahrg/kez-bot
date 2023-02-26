@@ -12,7 +12,6 @@ export const Message = ({
     <section
         aria-label={ariaLabel}
         className={`rounded-3xl p-4 text-black ${className}`}
-    >
-        {message}
-    </section>
+        dangerouslySetInnerHTML={{ __html: message }}
+    />
 )
