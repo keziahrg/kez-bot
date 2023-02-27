@@ -1,9 +1,8 @@
-import { getDocuments } from './getDocuments'
 import { supabaseClient } from '@/lib/supabase'
 import { openaiApi } from '@/lib/openai'
 
 export const generateEmbeddings = async (): Promise<void> => {
-    const documents = await getDocuments() // Your custom function to load docs
+    const documents = ['']
 
     // Assuming each document is a string
     for (const document of documents) {

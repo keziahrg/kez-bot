@@ -16,13 +16,11 @@ export const ChatBot = () => {
     const formRef = useRef<HTMLFormElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [messages, setMessages] = useState<Message[]>([])
 
     const handleFormSubmission = async (e: FormEvent) => {
-        setIsLoading(true)
         e.preventDefault()
-
         const question = inputRef.current?.value ?? ''
         const questionTime = format(new Date(), 'k:mm:ss aaaa')
 
@@ -33,6 +31,8 @@ export const ChatBot = () => {
                 ariaLabel: `At ${questionTime} you said:`,
             },
         ])
+
+        setIsLoading(true)
 
         formRef.current?.reset()
 
@@ -49,29 +49,46 @@ export const ChatBot = () => {
         }
 
         const data = response.body
-        if (!data) {
-            return
-        }
+        if (!data) return
+
         const reader = data.getReader()
-        const decoder = new TextDecoder()
-        let done = false
+        const textDecoder = new TextDecoder()
+
         let answer = ''
         const answerTime = format(new Date(), 'k:mm:ss aaaa')
+
+        setIsLoading(false)
+
+        let isFirstChunk = true
+        let done = false
+
         while (!done) {
             const { value, done: doneReading } = await reader.read()
             done = doneReading
-            const chunkValue = decoder.decode(value)
-            answer += chunkValue
-        }
+            if (done) return
 
-        setMessages((prevMessages) => [
-            ...prevMessages,
-            {
-                text: answer,
-                ariaLabel: `At ${answerTime} KezBot said:`,
-            },
-        ])
-        setIsLoading(false)
+            const chunkValue = textDecoder.decode(value)
+            answer += chunkValue
+            if (isFirstChunk) {
+                setMessages((prevMessages) => [
+                    ...prevMessages,
+                    {
+                        text: answer,
+                        ariaLabel: `At ${answerTime} KezBot said:`,
+                    },
+                ])
+            } else {
+                setMessages((prevMessages) => [
+                    ...prevMessages.slice(0, -1),
+                    {
+                        text: answer,
+                        ariaLabel: `At ${answerTime} KezBot said:`,
+                    },
+                ])
+            }
+
+            isFirstChunk = false
+        }
     }
 
     useEffect(() => {
@@ -87,23 +104,32 @@ export const ChatBot = () => {
             <Conversation>
                 <Message
                     className="rounded-bl-none bg-purple"
-                    message="<p>Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work.</p><br/><p>Powered by OpenAI, Supabase, Next.js, and Tailwind CSS, I'm here to provide accurate and helpful information.</p>"
                     ariaLabel="KezBot said:"
+                    message="
+                <p>
+                    Hello! I'm KezBot, your go-to source for information
+                    about Keziah Rackley-Gale. Ask me anything you want to
+                    know about her background, accomplishments, or current
+                    work.
+                </p>
+                <br />
+                <p>
+                    Powered by OpenAI, Supabase, Next.js, and Tailwind CSS,
+                    I'm here to provide accurate and helpful information.
+                </p>"
                 />
-                {messages.map((message, i) => {
-                    return (
-                        <Message
-                            key={i}
-                            className={
-                                i % 2 !== 0
-                                    ? 'rounded-bl-none bg-purple'
-                                    : 'rounded-br-none bg-blue'
-                            }
-                            message={message.text}
-                            ariaLabel={message.ariaLabel}
-                        />
-                    )
-                })}
+                {messages.map((message, i) => (
+                    <Message
+                        key={i}
+                        className={
+                            i % 2 !== 0
+                                ? 'rounded-bl-none bg-purple'
+                                : 'rounded-br-none bg-blue'
+                        }
+                        ariaLabel={message.ariaLabel}
+                        message={message.text}
+                    />
+                ))}
                 <div ref={messagesEndRef} />
                 {isLoading ? <Loading /> : null}
             </Conversation>
