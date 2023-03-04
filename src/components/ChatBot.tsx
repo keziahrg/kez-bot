@@ -1,12 +1,14 @@
 'use client'
 
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Conversation } from './Conversation'
-import { Input } from './Input'
 import { Message } from './Message'
 import { Loading } from './Loading'
 import { format } from 'date-fns'
-import { completionSchema } from '@/pages/api/completion'
+import { CompletionSchema, completionSchema } from '@/pages/api/completion'
+import { SubmitHandler, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import Error from 'next/error'
 
 type Message = {
     text: string
@@ -14,19 +16,27 @@ type Message = {
 }
 
 export const ChatBot = () => {
-    const formRef = useRef<HTMLFormElement>(null)
-    const inputRef = useRef<HTMLInputElement>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const [isLoading, setIsLoading] = useState<boolean>(false)
     const [messages, setMessages] = useState<Message[]>([])
 
-    const handleFormSubmission = async (e: FormEvent) => {
-        e.preventDefault()
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isError, setIsError] = useState<boolean>(false)
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<CompletionSchema>({
+        resolver: zodResolver(completionSchema),
+    })
+
+    const handleFormSubmission: SubmitHandler<CompletionSchema> = async ({
+        question,
+    }) => {
+        setIsError(false)
 
         try {
-            const question = inputRef.current?.value ?? ''
-            completionSchema.parse({ question })
-
             const questionTime = format(new Date(), 'k:mm:ss aaaa')
 
             setMessages((prevMessages) => [
@@ -38,8 +48,7 @@ export const ChatBot = () => {
             ])
 
             setIsLoading(true)
-
-            formRef.current?.reset()
+            reset()
 
             const response = await fetch('/api/completion', {
                 method: 'POST',
@@ -50,7 +59,10 @@ export const ChatBot = () => {
             })
 
             if (!response.ok) {
-                throw new Error(response.statusText)
+                throw new Error({
+                    statusCode: response.status,
+                    title: response.statusText,
+                })
             }
 
             const data = response.body
@@ -95,7 +107,8 @@ export const ChatBot = () => {
                 isFirstChunk = false
             }
         } catch (error) {
-            console.log(error)
+            setIsLoading(false)
+            setIsError(true)
         }
     }
 
@@ -109,6 +122,15 @@ export const ChatBot = () => {
 
     return (
         <>
+            {isError ? (
+                <div className="mx-auto mt-8 flex w-full max-w-xl justify-center px-4 md:mt-16">
+                    <div className=" w-full rounded-3xl bg-pink px-4 py-4">
+                        <p className="text-black">
+                            Woops! There was an error. Please try again later.
+                        </p>
+                    </div>
+                </div>
+            ) : null}
             <Conversation>
                 <Message
                     className="rounded-bl-none bg-purple"
@@ -137,50 +159,62 @@ export const ChatBot = () => {
             </Conversation>
             <div className="sticky bottom-0 right-0 left-0 bg-white bg-opacity-60 pt-4 pb-8 backdrop-blur-md dark:bg-black dark:bg-opacity-60 dark:text-white md:pt-8 md:pb-16">
                 <form
-                    ref={formRef}
-                    onSubmit={handleFormSubmission}
-                    className="relative mx-auto flex max-w-xl px-4"
+                    onSubmit={handleSubmit(handleFormSubmission)}
+                    className="relative mx-auto grid max-w-xl px-4"
                 >
-                    <Input
-                        required
-                        ref={inputRef}
-                        label="Enter your question"
-                        placeholder="Enter your question"
-                        type="text"
-                        id="question"
-                        name="question"
-                        disabled={isLoading}
-                    />
-                    <button
-                        disabled={isLoading}
-                        aria-label="Submit question"
-                        type="submit"
-                        className="background absolute right-8 top-0 bottom-0"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                            width="1em"
-                            height="1em"
-                            fontSize="1.25rem"
+                    <>
+                        <label
+                            className="sr-only row-start-1 row-end-2"
+                            htmlFor="question"
                         >
-                            <g
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                clipPath="url(#sendSvgClipPath)"
+                            Enter your question
+                        </label>
+                        <input
+                            aria-required
+                            className="row-start-2 row-end-3 w-full appearance-none rounded-3xl border-2 bg-grey-light py-4 pr-12 pl-4 dark:border-white dark:bg-grey-dark"
+                            placeholder="Enter your question"
+                            type="text"
+                            id="question"
+                            disabled={isSubmitting}
+                            autoComplete="off"
+                            {...register('question')}
+                        />
+                        {errors.question?.message ? (
+                            <p className="row-start-3 row-end-4 mt-4 text-xs text-pink">
+                                {errors.question.message}
+                            </p>
+                        ) : null}
+                        <button
+                            disabled={isLoading}
+                            aria-label="Submit question"
+                            type="submit"
+                            className="background absolute right-8 top-0 bottom-0 row-start-2 row-end-3"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 20 20"
+                                width="1em"
+                                height="1em"
+                                fontSize="1.25rem"
                             >
-                                <path d="m18.33 1.67-9.16 9.16M18.33 1.67 12.5 18.33l-3.33-7.5-7.5-3.33 16.66-5.83Z" />
-                            </g>
-                            <defs>
-                                <clipPath id="sendSvgClipPath">
-                                    <path fill="none" d="M0 0h20v20H0z" />
-                                </clipPath>
-                            </defs>
-                        </svg>
-                    </button>
+                                <g
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    clipPath="url(#sendSvgClipPath)"
+                                >
+                                    <path d="m18.33 1.67-9.16 9.16M18.33 1.67 12.5 18.33l-3.33-7.5-7.5-3.33 16.66-5.83Z" />
+                                </g>
+                                <defs>
+                                    <clipPath id="sendSvgClipPath">
+                                        <path fill="none" d="M0 0h20v20H0z" />
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </button>
+                    </>
                 </form>
             </div>
         </>

@@ -12,9 +12,14 @@ export const config = {
 
 const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
-export const completionSchema = z.object({
-    question: z.string().min(1),
-})
+export const completionSchema = z
+    .object({
+        question: z.string().min(1, 'Please enter a question to continue.'),
+    })
+    .required()
+    .strict()
+
+export type CompletionSchema = z.infer<typeof completionSchema>
 
 const handler = async (req: NextRequest): Promise<Response> => {
     if (req.method !== 'POST') {
