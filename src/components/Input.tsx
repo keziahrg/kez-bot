@@ -7,10 +7,14 @@ interface InputProps {
     name: string
     type: HTMLInputTypeAttribute
     disabled?: boolean
+    required?: boolean
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, placeholder, id, name, type, disabled }: InputProps, ref) => (
+    (
+        { label, placeholder, id, name, type, disabled, required }: InputProps,
+        ref
+    ) => (
         <>
             <label className="sr-only" htmlFor={id}>
                 {label}
@@ -24,6 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 id={id}
                 name={name}
                 type={type}
+                required={required}
             />
         </>
     )

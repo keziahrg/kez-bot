@@ -1,17 +1,20 @@
+import { ReactNode } from 'react'
+
 interface MessageProps {
-    message: string
+    children: ReactNode
     className?: string
     ariaLabel: string
 }
 
 export const Message = ({
-    message,
+    children,
     className = '',
     ariaLabel,
 }: MessageProps) => (
     <section
         aria-label={ariaLabel}
         className={`rounded-3xl p-4 text-black ${className}`}
-        dangerouslySetInnerHTML={{ __html: message }}
-    />
+    >
+        <p>{children}</p>
+    </section>
 )

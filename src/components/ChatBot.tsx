@@ -6,6 +6,7 @@ import { Input } from './Input'
 import { Message } from './Message'
 import { Loading } from './Loading'
 import { format } from 'date-fns'
+import { completionSchema } from '@/pages/api/completion'
 
 type Message = {
     text: string
@@ -21,73 +22,80 @@ export const ChatBot = () => {
 
     const handleFormSubmission = async (e: FormEvent) => {
         e.preventDefault()
-        const question = inputRef.current?.value ?? ''
-        const questionTime = format(new Date(), 'k:mm:ss aaaa')
 
-        setMessages((prevMessages) => [
-            ...prevMessages,
-            {
-                text: `<p>${question}</p>`,
-                ariaLabel: `At ${questionTime} you said:`,
-            },
-        ])
+        try {
+            const question = inputRef.current?.value ?? ''
+            completionSchema.parse({ question })
 
-        setIsLoading(true)
+            const questionTime = format(new Date(), 'k:mm:ss aaaa')
 
-        formRef.current?.reset()
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                {
+                    text: question,
+                    ariaLabel: `At ${questionTime} you said:`,
+                },
+            ])
 
-        const response = await fetch('/api/completion', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ question }),
-        })
+            setIsLoading(true)
 
-        if (!response.ok) {
-            throw new Error(response.statusText)
-        }
+            formRef.current?.reset()
 
-        const data = response.body
-        if (!data) return
+            const response = await fetch('/api/completion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question }),
+            })
 
-        const reader = data.getReader()
-        const textDecoder = new TextDecoder()
-
-        let answer = ''
-        const answerTime = format(new Date(), 'k:mm:ss aaaa')
-
-        setIsLoading(false)
-
-        let isFirstChunk = true
-        let done = false
-
-        while (!done) {
-            const { value, done: doneReading } = await reader.read()
-            done = doneReading
-            if (done) return
-
-            const chunkValue = textDecoder.decode(value)
-            answer += chunkValue
-            if (isFirstChunk) {
-                setMessages((prevMessages) => [
-                    ...prevMessages,
-                    {
-                        text: answer,
-                        ariaLabel: `At ${answerTime} KezBot said:`,
-                    },
-                ])
-            } else {
-                setMessages((prevMessages) => [
-                    ...prevMessages.slice(0, -1),
-                    {
-                        text: answer,
-                        ariaLabel: `At ${answerTime} KezBot said:`,
-                    },
-                ])
+            if (!response.ok) {
+                throw new Error(response.statusText)
             }
 
-            isFirstChunk = false
+            const data = response.body
+            if (!data) return
+
+            const reader = data.getReader()
+            const textDecoder = new TextDecoder()
+
+            let answer = ''
+            const answerTime = format(new Date(), 'k:mm:ss aaaa')
+
+            setIsLoading(false)
+
+            let isFirstChunk = true
+            let done = false
+
+            while (!done) {
+                const { value, done: doneReading } = await reader.read()
+                done = doneReading
+                if (done) return
+
+                const chunkValue = textDecoder.decode(value)
+                answer += chunkValue
+                if (isFirstChunk) {
+                    setMessages((prevMessages) => [
+                        ...prevMessages,
+                        {
+                            text: answer,
+                            ariaLabel: `At ${answerTime} KezBot said:`,
+                        },
+                    ])
+                } else {
+                    setMessages((prevMessages) => [
+                        ...prevMessages.slice(0, -1),
+                        {
+                            text: answer,
+                            ariaLabel: `At ${answerTime} KezBot said:`,
+                        },
+                    ])
+                }
+
+                isFirstChunk = false
+            }
+        } catch (error) {
+            console.log(error)
         }
     }
 
@@ -105,19 +113,12 @@ export const ChatBot = () => {
                 <Message
                     className="rounded-bl-none bg-purple"
                     ariaLabel="KezBot said:"
-                    message="
-                <p>
-                    Hello! I'm KezBot, your go-to source for information
-                    about Keziah Rackley-Gale. Ask me anything you want to
-                    know about her background, accomplishments, or current
-                    work.
-                </p>
-                <br />
-                <p>
-                    Powered by OpenAI, Supabase, Next.js, and Tailwind CSS,
-                    I'm here to provide accurate and helpful information.
-                </p>"
-                />
+                >
+                    {`Hello! I'm KezBot, your go-to source for information
+                        about Keziah Rackley-Gale. Ask me anything you want to
+                        know about her background, accomplishments, or current
+                        work.`}
+                </Message>
                 {messages.map((message, i) => (
                     <Message
                         key={i}
@@ -127,8 +128,9 @@ export const ChatBot = () => {
                                 : 'rounded-br-none bg-blue'
                         }
                         ariaLabel={message.ariaLabel}
-                        message={message.text}
-                    />
+                    >
+                        {message.text}
+                    </Message>
                 ))}
                 <div ref={messagesEndRef} />
                 {isLoading ? <Loading /> : null}
@@ -140,6 +142,7 @@ export const ChatBot = () => {
                     className="relative mx-auto flex max-w-xl px-4"
                 >
                     <Input
+                        required
                         ref={inputRef}
                         label="Enter your question"
                         placeholder="Enter your question"

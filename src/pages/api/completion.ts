@@ -3,6 +3,8 @@ import OneLine from 'oneline'
 import stripIndent from 'strip-indent'
 import { openAiStream } from '../../helpers'
 import GPT3Tokenizer from 'gpt3-tokenizer'
+import { NextRequest } from 'next/server'
+import { z } from 'zod'
 
 export const config = {
     runtime: 'edge',
@@ -10,11 +12,39 @@ export const config = {
 
 const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
-const handler = async (req: Request): Promise<Response> => {
-    const { question } = await req.json()
+export const completionSchema = z.object({
+    question: z.string().min(1),
+})
+
+const handler = async (req: NextRequest): Promise<Response> => {
+    if (req.method !== 'POST') {
+        return new Response(null, {
+            status: 405,
+            statusText: `Method ${req.method} Not Allowed`,
+        })
+    }
+
+    if (req.headers.get('Content-Type') !== 'application/json') {
+        return new Response(null, {
+            status: 406,
+            statusText: 'Invalid Content-Type Header',
+        })
+    }
+
+    const body = await req.json()
+    const response = completionSchema.safeParse(body)
+
+    if (!response.success) {
+        return new Response(null, {
+            status: 400,
+            statusText: 'Invalid Payload',
+        })
+    }
+
+    const { question } = response.data
 
     // OpenAI recommends replacing newlines with spaces for best results
-    const sanitisedQuestion = question.replace(/\n/g, ' ')
+    const formattedQuestion = question.replace(/\n/g, ' ')
 
     // Generate a one-time embedding for the query itself
     const embeddingResponse = await fetch(
@@ -27,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
             },
             body: JSON.stringify({
                 model: 'text-embedding-ada-002',
-                input: sanitisedQuestion,
+                input: formattedQuestion,
             }),
         }
     )
@@ -62,21 +92,20 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const prompt = stripIndent(`
-                ${OneLine`You are a very enthusiastic chat bot built to answer questions about Keziah Rackley-Gale. You love
-                to help people! Given the following information about Keziah Rackley-Gale, answer the question using only that information,
-                outputted in HTML format. If you are unsure and the answer
-                is not explicitly written in the information, say
-                "Sorry, I haven't been taught the answer to that question :("`}
+             ${OneLine`You are a very enthusiastic chat bot built to answer questions about Keziah Rackley-Gale. You love
+             to help people! Given the following information about Keziah Rackley-Gale, answer the question using only that information. If you are unsure and the answer
+             is not explicitly written in the information, say
+             "Sorry, I haven't been taught the answer to that question :("`}
 
-                Context information:
-                ${contextInformation}
+             Context information:
+             ${contextInformation}
 
-                Question: """
-                ${question}
-                """
+             Question: """
+             ${question}
+             """
 
-                Answer as HTML:
-              `)
+             Answer:
+           `)
 
     const payload = {
         model: 'text-davinci-003',
