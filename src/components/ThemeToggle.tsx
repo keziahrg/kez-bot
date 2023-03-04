@@ -5,9 +5,10 @@ import { useEffect, useState } from 'react'
 
 export const ThemeToggle = () => {
     const [mounted, setMounted] = useState<boolean>(false)
-    const { theme, setTheme } = useTheme()
+    const { resolvedTheme, setTheme } = useTheme()
 
-    const handleOnClick = () => setTheme(theme === 'light' ? 'dark' : 'light')
+    const handleOnClick = () =>
+        setTheme(resolvedTheme === 'light' ? 'dark' : 'light')
 
     useEffect(() => {
         setMounted(true)
@@ -19,12 +20,12 @@ export const ThemeToggle = () => {
 
     return (
         <button
-            aria-label={`Change theme from ${theme} to ${
-                theme === 'light' ? 'dark' : 'light'
+            aria-label={`Change theme from ${resolvedTheme} to ${
+                resolvedTheme === 'light' ? 'dark' : 'light'
             }`}
             onClick={handleOnClick}
         >
-            {theme === 'light' ? (
+            {resolvedTheme === 'light' ? (
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
