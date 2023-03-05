@@ -3,7 +3,7 @@ import { ReactNode } from 'react'
 interface MessageProps {
     children: ReactNode
     className?: string
-    ariaLabel: string
+    ariaLabel?: string
 }
 
 export const Message = ({

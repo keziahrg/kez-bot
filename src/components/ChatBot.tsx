@@ -5,15 +5,25 @@ import { Conversation } from './Conversation'
 import { Message } from './Message'
 import { Loading } from './Loading'
 import { format } from 'date-fns'
-import { CompletionSchema, completionSchema } from '@/pages/api/completion'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Error from 'next/error'
+import { z } from 'zod'
 
 type Message = {
-    text: string
-    ariaLabel: string
+    content: string
+    role: string
+    ariaLabel?: string
 }
+
+export const formSchema = z
+    .object({
+        question: z.string().min(1, 'Please enter a question to continue.'),
+    })
+    .required()
+    .strict()
+
+export type FormSchema = z.infer<typeof formSchema>
 
 export const ChatBot = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -27,11 +37,11 @@ export const ChatBot = () => {
         handleSubmit,
         reset,
         formState: { errors, isSubmitting },
-    } = useForm<CompletionSchema>({
-        resolver: zodResolver(completionSchema),
+    } = useForm<FormSchema>({
+        resolver: zodResolver(formSchema),
     })
 
-    const handleFormSubmission: SubmitHandler<CompletionSchema> = async ({
+    const handleFormSubmission: SubmitHandler<FormSchema> = async ({
         question,
     }) => {
         setIsError(false)
@@ -42,7 +52,8 @@ export const ChatBot = () => {
             setMessages((prevMessages) => [
                 ...prevMessages,
                 {
-                    text: question,
+                    content: question,
+                    role: 'user',
                     ariaLabel: `At ${questionTime} you said:`,
                 },
             ])
@@ -55,7 +66,17 @@ export const ChatBot = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ question }),
+                body: JSON.stringify({
+                    question,
+                    messages: [
+                        ...messages,
+                        {
+                            content: question,
+                            role: 'user',
+                            ariaLabel: `At ${questionTime} you said:`,
+                        },
+                    ],
+                }),
             })
 
             if (!response.ok) {
@@ -90,7 +111,8 @@ export const ChatBot = () => {
                     setMessages((prevMessages) => [
                         ...prevMessages,
                         {
-                            text: answer,
+                            content: answer,
+                            role: 'assistant',
                             ariaLabel: `At ${answerTime} KezBot said:`,
                         },
                     ])
@@ -98,7 +120,8 @@ export const ChatBot = () => {
                     setMessages((prevMessages) => [
                         ...prevMessages.slice(0, -1),
                         {
-                            text: answer,
+                            content: answer,
+                            role: 'assistant',
                             ariaLabel: `At ${answerTime} KezBot said:`,
                         },
                     ])
@@ -151,7 +174,7 @@ export const ChatBot = () => {
                         }
                         ariaLabel={message.ariaLabel}
                     >
-                        {message.text}
+                        {message.content}
                     </Message>
                 ))}
                 <div ref={messagesEndRef} />

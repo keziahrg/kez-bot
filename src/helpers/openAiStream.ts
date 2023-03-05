@@ -12,7 +12,7 @@ export const openAiStream = async (payload: any) => {
 
     let counter = 0
 
-    const res = await fetch('https://api.openai.com/v1/completions', {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}`,
@@ -32,10 +32,9 @@ export const openAiStream = async (payload: any) => {
                     }
                     try {
                         const json = JSON.parse(data)
-                        const text = json.choices[0].text
-                        if (counter < 2 && (text.match(/\n/) || []).length) {
-                            return
-                        }
+                        const text = json.choices[0].delta.content
+                        if (counter < 2 && !text) return
+
                         const queue = encoder.encode(text)
                         controller.enqueue(queue)
                         counter++

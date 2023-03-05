@@ -15,6 +15,12 @@ const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 export const completionSchema = z
     .object({
         question: z.string().min(1, 'Please enter a question to continue.'),
+        messages: z
+            .object({
+                role: z.string(),
+                content: z.string(),
+            })
+            .array(),
     })
     .required()
     .strict()
@@ -46,12 +52,12 @@ const handler = async (req: NextRequest): Promise<Response> => {
         })
     }
 
-    const { question } = response.data
+    const { question, messages } = response.data
 
     // OpenAI recommends replacing newlines with spaces for best results
     const formattedQuestion = question.replace(/\n/g, ' ')
 
-    // Generate a one-time embedding for the query itself
+    // Generate a one-time embedding for the question itself
     const embeddingResponse = await fetch(
         'https://api.openai.com/v1/embeddings',
         {
@@ -72,12 +78,12 @@ const handler = async (req: NextRequest): Promise<Response> => {
     const { data: documents } = await supabaseClient.rpc('match_documents', {
         query_embedding: embedding,
         similarity_threshold: 0.8,
-        match_count: 3,
+        match_count: 10,
     })
 
     const tokenizer = new GPT3Tokenizer({ type: 'gpt3' })
     let tokenCount = 0
-    let contextInformation = ''
+    let context = ''
 
     // Concat matched documents
     if (documents) {
@@ -92,33 +98,27 @@ const handler = async (req: NextRequest): Promise<Response> => {
                 break
             }
 
-            contextInformation += `${content.trim()}\n---\n`
+            context += content.trim()
         }
     }
 
-    const prompt = stripIndent(`
-             ${OneLine`You are a very enthusiastic chat bot built to answer questions about Keziah Rackley-Gale. You love
-             to help people! Given the following information about Keziah Rackley-Gale, answer the question using only that information. If you are unsure and the answer
-             is not explicitly written in the information, say
-             "Sorry, I haven't been taught the answer to that question :("`}
-
-             Context information:
-             ${contextInformation}
-
-             Question: """
-             ${question}
-             """
-
-             Answer:
-           `)
+    const prompt = `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`
 
     const payload = {
-        model: 'text-davinci-003',
-        prompt,
+        model: 'gpt-3.5-turbo',
+        messages: [
+            { role: 'system', content: prompt },
+            {
+                role: 'assistant',
+                content:
+                    "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work.",
+            },
+            ...messages,
+        ],
         max_tokens: 512,
-        temperature: 0,
+        temperature: 0.2,
         frequency_penalty: 0,
-        presence_penalty: 0,
+        presence_penalty: 0.6,
         stream: true,
         n: 1,
     }
