@@ -24,3 +24,7 @@ To run KezBot locally, you'll need to follow these steps:
 ## Usage
 
 To use KezBot, simply visit the [website](https://kez-bot.vercel.app/) and start asking questions about me!
+
+## References
+
+[This blog post by Vercel](https://vercel.com/blog/gpt-3-app-next-js-vercel-edge-functions) and [this blog post by Supabase](https://supabase.com/blog/openai-embeddings-postgres-vector) provided awesome references.
