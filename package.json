@@ -12,7 +12,7 @@
         "prettier": "prettier --write --ignore-unknown .",
         "prettier:check": "prettier --check --ignore-unknown .",
         "test": "yarn prettier:check && yarn lint",
-        "supabase:generate-types": "npx supabase gen types typescript --project-id \"fsbpogvfivdrdbwedqeq\" > src/types/supabase.ts"
+        "supabase:generate-types": "npx supabase gen types typescript --project-id \"fsbpogvfivdrdbwedqeq\" > src/lib/supabase/types.ts"
     },
     "lint-staged": {
         "*": "prettier --write --ignore-unknown"

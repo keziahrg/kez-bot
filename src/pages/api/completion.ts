@@ -1,10 +1,9 @@
 import { supabaseClient } from '@/lib/supabase'
-import OneLine from 'oneline'
-import stripIndent from 'strip-indent'
 import { openAiStream } from '../../helpers'
 import GPT3Tokenizer from 'gpt3-tokenizer'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { OpenAiStreamPayload } from '@/helpers/openAiStream'
 
 export const config = {
     runtime: 'edge',
@@ -104,7 +103,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
 
     const prompt = `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`
 
-    const payload = {
+    const payload: OpenAiStreamPayload = {
         model: 'gpt-3.5-turbo',
         messages: [
             { role: 'system', content: prompt },

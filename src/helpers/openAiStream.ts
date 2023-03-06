@@ -1,12 +1,25 @@
+import { Message } from '@/components/ChatBot'
 import {
     createParser,
     ParsedEvent,
     ReconnectInterval,
 } from 'eventsource-parser'
+import { BufferSource } from 'stream/web'
 
 const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
-export const openAiStream = async (payload: any) => {
+export interface OpenAiStreamPayload {
+    model: string
+    messages: Message[]
+    max_tokens: number
+    temperature: number
+    frequency_penalty: number
+    presence_penalty: number
+    stream: boolean
+    n: number
+}
+
+export const openAiStream = async (payload: OpenAiStreamPayload) => {
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
 
@@ -21,7 +34,7 @@ export const openAiStream = async (payload: any) => {
         body: JSON.stringify(payload),
     })
 
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<Uint8Array>({
         async start(controller) {
             function onParse(event: ParsedEvent | ReconnectInterval) {
                 if (event.type === 'event') {
@@ -45,8 +58,9 @@ export const openAiStream = async (payload: any) => {
             }
 
             const parser = createParser(onParse)
-            for await (const chunk of res.body as any) {
-                parser.feed(decoder.decode(chunk))
+
+            for await (const chunk of res.body as unknown as Uint8Array) {
+                parser.feed(decoder.decode(chunk as unknown as BufferSource))
             }
         },
     })

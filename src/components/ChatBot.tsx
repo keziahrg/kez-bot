@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import Error from 'next/error'
 import { z } from 'zod'
 
-type Message = {
+export interface Message {
     content: string
     role: string
     ariaLabel?: string
