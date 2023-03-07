@@ -102,6 +102,52 @@ const handler = async (req: NextRequest): Promise<Response> => {
     }
 
     const prompt = `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`
+    const promptTokens = tokenizer.encode(prompt).text.length
+    const initialMessageToken = tokenizer.encode(
+        "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work."
+    ).text.length
+    const maxTokensForResponse = 512
+    const maxAllowableTokensForMessages =
+        4096 - tokenCount - promptTokens - initialMessageToken
+
+    let messageTokens = 0
+    let numberOfMessagesToRemove = 0
+
+    const removeOldMessages = (oldestMessageTokenLenght: number | null) => {
+        if (
+            messageTokens < maxAllowableTokensForMessages ||
+            !oldestMessageTokenLenght
+        )
+            return
+
+        numberOfMessagesToRemove++
+        messageTokens = messageTokens - oldestMessageTokenLenght
+
+        removeOldMessages(
+            tokenizer?.encode?.(messages?.[numberOfMessagesToRemove]?.content)
+                ?.text?.length ?? null
+        )
+    }
+
+    for (let i = 0; i < messages.length; i++) {
+        const message = messages[i]
+        const content = message.content
+        const encoded = tokenizer.encode(content)
+        const messageLength = encoded.text.length
+        messageTokens += messageLength
+
+        if (messageTokens > maxAllowableTokensForMessages) {
+            removeOldMessages(
+                tokenizer.encode(messages[numberOfMessagesToRemove].content)
+                    .text.length
+            )
+        }
+    }
+
+    const actualMessages = [...messages].slice(
+        numberOfMessagesToRemove,
+        messages.length
+    )
 
     const payload: OpenAiStreamPayload = {
         model: 'gpt-3.5-turbo',
@@ -112,9 +158,9 @@ const handler = async (req: NextRequest): Promise<Response> => {
                 content:
                     "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work.",
             },
-            ...messages,
+            ...actualMessages,
         ],
-        max_tokens: 512,
+        max_tokens: maxTokensForResponse,
         temperature: 0.2,
         frequency_penalty: 0,
         presence_penalty: 0.6,
