@@ -1,28 +1,21 @@
 'use client'
 
-import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
 
 export const ThemeToggle = () => {
-    const [mounted, setMounted] = useState<boolean>(false)
     const { resolvedTheme, setTheme } = useTheme()
 
-    const handleOnClick = () =>
-        setTheme(resolvedTheme === 'light' ? 'dark' : 'light')
+    const [mounted, setMounted] = useState<boolean>(false)
+    useEffect(() => setMounted(true), [])
+    if (!mounted) return null
 
-    useEffect(() => {
-        setMounted(true)
-    }, [])
-
-    if (!mounted) {
-        return null
-    }
+    const oppositeTheme = resolvedTheme === 'light' ? 'dark' : 'light'
+    const handleOnClick = () => setTheme(oppositeTheme)
 
     return (
         <button
-            aria-label={`Change theme from ${resolvedTheme} to ${
-                resolvedTheme === 'light' ? 'dark' : 'light'
-            }`}
+            aria-label={`Change theme from ${resolvedTheme} to ${oppositeTheme}`}
             onClick={handleOnClick}
         >
             {resolvedTheme === 'light' ? (

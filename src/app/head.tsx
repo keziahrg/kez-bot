@@ -9,7 +9,7 @@ export default function Head() {
             />
             <meta
                 name="description"
-                content="A custom-trained GPT-3 chatbot that's ready to answer all your questions about me. Powered by the OpenAI Davinci model 🤖"
+                content="A custom GPT-3.5 chatbot that's ready to answer all your questions about me. Built with OpenAI, Supabase, Next.js, and Tailwind CSS 🤖"
             />
             <link rel="icon" href="/favicon.svg" />
         </>
