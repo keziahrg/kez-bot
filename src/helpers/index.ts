@@ -1,3 +1,6 @@
-import { generateEmbeddings } from './generateEmbeddings'
-import { openAiStream } from './openAiStream'
-export { generateEmbeddings, openAiStream }
+import {
+    streamCompletionReponse,
+    StreamCompletionResponsePayload,
+} from './streamCompletionReponse'
+export { streamCompletionReponse }
+export type { StreamCompletionResponsePayload }

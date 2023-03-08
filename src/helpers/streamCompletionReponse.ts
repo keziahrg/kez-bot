@@ -1,4 +1,4 @@
-import { Message } from '@/components/ChatBot'
+import { MessageType } from '@/components/ChatBot'
 import {
     createParser,
     ParsedEvent,
@@ -8,9 +8,9 @@ import { BufferSource } from 'stream/web'
 
 const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
-export interface OpenAiStreamPayload {
+export interface StreamCompletionResponsePayload {
     model: string
-    messages: Message[]
+    messages: MessageType[]
     max_tokens: number
     temperature: number
     frequency_penalty: number
@@ -19,12 +19,9 @@ export interface OpenAiStreamPayload {
     n: number
 }
 
-export const openAiStream = async (payload: OpenAiStreamPayload) => {
-    const encoder = new TextEncoder()
-    const decoder = new TextDecoder()
-
-    let counter = 0
-
+export const streamCompletionReponse = async (
+    payload: StreamCompletionResponsePayload
+) => {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
         headers: {
             'Content-Type': 'application/json',
@@ -33,6 +30,11 @@ export const openAiStream = async (payload: OpenAiStreamPayload) => {
         method: 'POST',
         body: JSON.stringify(payload),
     })
+
+    let counter = 0
+
+    const encoder = new TextEncoder()
+    const decoder = new TextDecoder()
 
     const stream = new ReadableStream<Uint8Array>({
         async start(controller) {

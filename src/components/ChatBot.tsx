@@ -7,30 +7,37 @@ import { z } from 'zod'
 import { format } from 'date-fns'
 import Error from 'next/error'
 import { Conversation } from './Conversation'
-import { Message } from './Message'
+import { Message, MessageProps } from './Message'
 import { Loading } from './Loading'
 
-export interface Message {
-    content: string
-    role: string
-    ariaLabel?: string
-}
-
-export const formSchema = z
+const formSchema = z
     .object({
         question: z.string().min(1, 'Please enter a question to continue.'),
     })
     .required()
     .strict()
 
-export type FormSchema = z.infer<typeof formSchema>
+type FormSchema = z.infer<typeof formSchema>
+
+export type MessageType = Pick<MessageProps, 'ariaLabel'> & {
+    content: string
+    role: string
+}
 
 export const ChatBot = () => {
-    const messagesEndRef = useRef<HTMLDivElement>(null)
-    const [messages, setMessages] = useState<Message[]>([])
-
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [isError, setIsError] = useState<boolean>(false)
+
+    const [messages, setMessages] = useState<MessageType[]>([])
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const scrollToBottom = () => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+
+        scrollToBottom()
+    }, [messages])
 
     const {
         register,
@@ -47,21 +54,21 @@ export const ChatBot = () => {
         setIsError(false)
 
         try {
-            const questionTime = format(new Date(), 'k:mm:ss aaaa')
+            const timeOfUserQuestion = format(new Date(), 'k:mm:ss aaaa')
 
             setMessages((prevMessages) => [
                 ...prevMessages,
                 {
                     content: question,
                     role: 'user',
-                    ariaLabel: `At ${questionTime} you said:`,
+                    ariaLabel: `At ${timeOfUserQuestion} you said:`,
                 },
             ])
 
             setIsLoading(true)
             reset()
 
-            const response = await fetch('/api/completion', {
+            const response = await fetch('/api/chatCompletion', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -73,7 +80,7 @@ export const ChatBot = () => {
                         {
                             content: question,
                             role: 'user',
-                            ariaLabel: `At ${questionTime} you said:`,
+                            ariaLabel: `At ${timeOfUserQuestion} you said:`,
                         },
                     ],
                 }),
@@ -93,7 +100,7 @@ export const ChatBot = () => {
             const textDecoder = new TextDecoder()
 
             let answer = ''
-            const answerTime = format(new Date(), 'k:mm:ss aaaa')
+            const timeOfAssistantAnswer = format(new Date(), 'k:mm:ss aaaa')
 
             setIsLoading(false)
 
@@ -107,13 +114,14 @@ export const ChatBot = () => {
 
                 const chunkValue = textDecoder.decode(value)
                 answer += chunkValue
+
                 if (isFirstChunk) {
                     setMessages((prevMessages) => [
                         ...prevMessages,
                         {
                             content: answer,
                             role: 'assistant',
-                            ariaLabel: `At ${answerTime} KezBot said:`,
+                            ariaLabel: `At ${timeOfAssistantAnswer} KezBot said:`,
                         },
                     ])
                 } else {
@@ -122,7 +130,7 @@ export const ChatBot = () => {
                         {
                             content: answer,
                             role: 'assistant',
-                            ariaLabel: `At ${answerTime} KezBot said:`,
+                            ariaLabel: `At ${timeOfAssistantAnswer} KezBot said:`,
                         },
                     ])
                 }
@@ -134,14 +142,6 @@ export const ChatBot = () => {
             setIsError(true)
         }
     }
-
-    useEffect(() => {
-        const scrollToBottom = () => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }
-
-        scrollToBottom()
-    }, [messages])
 
     return (
         <>
@@ -159,10 +159,9 @@ export const ChatBot = () => {
                     className="rounded-bl-none bg-purple"
                     ariaLabel="KezBot said:"
                 >
-                    {`Hello! I'm KezBot, your go-to source for information
-                        about Keziah Rackley-Gale. Ask me anything you want to
-                        know about her background, accomplishments, or current
-                        work.`}
+                    {
+                        "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work."
+                    }
                 </Message>
                 {messages.map((message, i) => (
                     <Message
@@ -177,8 +176,7 @@ export const ChatBot = () => {
                         {message.content}
                     </Message>
                 ))}
-                <div ref={messagesEndRef} />
-                {isLoading ? <Loading /> : null}
+                <div ref={messagesEndRef}>{isLoading ? <Loading /> : null}</div>
             </Conversation>
             <div className="sticky bottom-0 right-0 left-0 bg-white bg-opacity-60 pt-4 pb-8 backdrop-blur-md dark:bg-black dark:bg-opacity-60 dark:text-white md:pt-8 md:pb-16">
                 <form

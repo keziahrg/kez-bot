@@ -1,9 +1,11 @@
 import { supabaseClient } from '@/lib/supabase'
-import { openAiStream } from '../../helpers'
+import {
+    streamCompletionReponse,
+    StreamCompletionResponsePayload,
+} from '../../helpers'
 import GPT3Tokenizer from 'gpt3-tokenizer'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { OpenAiStreamPayload } from '@/helpers/openAiStream'
 
 export const config = {
     runtime: 'edge',
@@ -11,7 +13,7 @@ export const config = {
 
 const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
-export const completionSchema = z
+const chatCompletionSchema = z
     .object({
         question: z.string().min(1, 'Please enter a question to continue.'),
         messages: z
@@ -23,8 +25,6 @@ export const completionSchema = z
     })
     .required()
     .strict()
-
-export type CompletionSchema = z.infer<typeof completionSchema>
 
 const handler = async (req: NextRequest): Promise<Response> => {
     if (req.method !== 'POST') {
@@ -42,7 +42,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
     }
 
     const body = await req.json()
-    const response = completionSchema.safeParse(body)
+    const response = chatCompletionSchema.safeParse(body)
 
     if (!response.success) {
         return new Response(null, {
@@ -81,7 +81,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
     })
 
     const tokenizer = new GPT3Tokenizer({ type: 'gpt3' })
-    let tokenCount = 0
+    let noOfTokensForContext = 0
     let context = ''
 
     // Concat matched documents
@@ -90,10 +90,10 @@ const handler = async (req: NextRequest): Promise<Response> => {
             const document = documents[i]
             const content = document.content
             const encoded = tokenizer.encode(content)
-            tokenCount += encoded.text.length
+            noOfTokensForContext += encoded.text.length
 
-            // Limit context to max 1500 tokens (configurable)
-            if (tokenCount > 1500) {
+            // Limit context to max 1500 tokens
+            if (noOfTokensForContext > 1500) {
                 break
             }
 
@@ -101,66 +101,79 @@ const handler = async (req: NextRequest): Promise<Response> => {
         }
     }
 
-    const prompt = `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`
-    const promptTokens = tokenizer.encode(prompt).text.length
-    const initialMessageToken = tokenizer.encode(
+    const systemMessage = `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`
+    const noOfTokensForSystemMessage =
+        tokenizer.encode(systemMessage).text.length
+
+    const iniitalAssistantMessage =
         "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work."
+    const noOfTokensForInitialAssistantMessage = tokenizer.encode(
+        iniitalAssistantMessage
     ).text.length
-    const maxTokensForResponse = 512
-    const maxAllowableTokensForMessages =
-        4096 - tokenCount - promptTokens - initialMessageToken
 
-    let messageTokens = 0
-    let numberOfMessagesToRemove = 0
+    const maxNoOfTokensForRequest = 4096
+    const maxNoOfTokensForResponse = 512
 
-    const removeOldMessages = (oldestMessageTokenLenght: number | null) => {
+    const maxNoOfAllowableTokensForMessages =
+        maxNoOfTokensForRequest -
+        noOfTokensForSystemMessage -
+        noOfTokensForContext -
+        noOfTokensForInitialAssistantMessage
+
+    let noOfTokensForMessages = 0
+    let noOfOldMessagesThatNeedRemoving = 0
+
+    const removeOldMessages = (noOfTokensForOldestMessage: number | null) => {
         if (
-            messageTokens < maxAllowableTokensForMessages ||
-            !oldestMessageTokenLenght
+            noOfTokensForMessages < maxNoOfAllowableTokensForMessages ||
+            !noOfTokensForOldestMessage
         )
             return
 
-        numberOfMessagesToRemove++
-        messageTokens = messageTokens - oldestMessageTokenLenght
+        noOfOldMessagesThatNeedRemoving++
+        noOfTokensForMessages -= noOfTokensForOldestMessage
 
-        removeOldMessages(
-            tokenizer?.encode?.(messages?.[numberOfMessagesToRemove]?.content)
-                ?.text?.length ?? null
-        )
+        const newOldestMessage =
+            messages?.[noOfOldMessagesThatNeedRemoving].content
+        const noOfTokensForNewOldestMessage = newOldestMessage
+            ? tokenizer.encode(newOldestMessage).text.length
+            : null
+
+        removeOldMessages(noOfTokensForNewOldestMessage)
     }
 
     for (let i = 0; i < messages.length; i++) {
         const message = messages[i]
         const content = message.content
         const encoded = tokenizer.encode(content)
-        const messageLength = encoded.text.length
-        messageTokens += messageLength
+        const noOfTokensForMessage = encoded.text.length
+        noOfTokensForMessages += noOfTokensForMessage
 
-        if (messageTokens > maxAllowableTokensForMessages) {
+        if (noOfTokensForMessages > maxNoOfAllowableTokensForMessages) {
             removeOldMessages(
-                tokenizer.encode(messages[numberOfMessagesToRemove].content)
-                    .text.length
+                tokenizer.encode(
+                    messages[noOfOldMessagesThatNeedRemoving].content
+                ).text.length
             )
         }
     }
 
-    const actualMessages = [...messages].slice(
-        numberOfMessagesToRemove,
+    const mostRecentMessages = [...messages].slice(
+        noOfOldMessagesThatNeedRemoving,
         messages.length
     )
 
-    const payload: OpenAiStreamPayload = {
+    const payload: StreamCompletionResponsePayload = {
         model: 'gpt-3.5-turbo',
         messages: [
-            { role: 'system', content: prompt },
+            { role: 'system', content: systemMessage },
             {
                 role: 'assistant',
-                content:
-                    "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work.",
+                content: iniitalAssistantMessage,
             },
-            ...actualMessages,
+            ...mostRecentMessages,
         ],
-        max_tokens: maxTokensForResponse,
+        max_tokens: maxNoOfTokensForResponse,
         temperature: 0.2,
         frequency_penalty: 0,
         presence_penalty: 0.6,
@@ -168,7 +181,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
         n: 1,
     }
 
-    const stream = await openAiStream(payload)
+    const stream = await streamCompletionReponse(payload)
 
     return new Response(stream, {
         headers: { 'Content-Type': 'text/event-stream' },

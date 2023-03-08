@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 
-interface MessageProps {
+export interface MessageProps {
     children: ReactNode
     className?: string
     ariaLabel?: string
