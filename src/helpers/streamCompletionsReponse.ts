@@ -1,3 +1,4 @@
+import { handleInvalidPayload } from '@/helpers/handleInvalidPayload'
 import {
     createParser,
     ParsedEvent,
@@ -38,10 +39,7 @@ export const streamCompletionsReponse = async (
         streamCompletionsResponsePayloadSchema.safeParse(payload)
 
     if (!parsedPayload.success) {
-        return new Response(null, {
-            status: 400,
-            statusText: 'Invalid Payload',
-        })
+        return handleInvalidPayload()
     }
 
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -54,6 +52,7 @@ export const streamCompletionsReponse = async (
     })
 
     let counter = 0
+
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
 
@@ -66,6 +65,7 @@ export const streamCompletionsReponse = async (
                         controller.close()
                         return
                     }
+
                     try {
                         const json = JSON.parse(data)
                         const text = json.choices[0].delta.content
@@ -82,7 +82,6 @@ export const streamCompletionsReponse = async (
             }
 
             const parser = createParser(onParse)
-
             for await (const chunk of res.body as unknown as Uint8Array) {
                 parser.feed(decoder.decode(chunk as unknown as BufferSource))
             }

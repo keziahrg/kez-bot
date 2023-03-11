@@ -1,9 +1,20 @@
 import { ReactNode } from 'react'
 
-export interface MessageProps {
+interface MessageProps {
     children: ReactNode
     className?: string
     ariaLabel?: string
+}
+
+export type MessageType = Pick<MessageProps, 'ariaLabel'> & {
+    role: string
+    content: string
+}
+
+export enum MESSAGE_ROLES {
+    SYSTEM = 'system',
+    ASSISTANT = 'assistant',
+    USER = 'user',
 }
 
 export const Message = ({

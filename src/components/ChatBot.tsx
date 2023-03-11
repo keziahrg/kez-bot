@@ -2,30 +2,28 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
-import { format } from 'date-fns'
 import { Loading } from './Loading'
-import { Message, MessageProps } from './Message'
+import { Message, MessageType, MESSAGE_ROLES } from './Message'
 import { Conversation } from './Conversation'
 import { ErrorMessage } from './ErrorMessage'
 import { QuestionForm, QuestionFormSchema } from './QuestionForm'
+import { getCurrentTime } from '@/helpers/getCurrentTime'
 
-export type MessageType = Pick<MessageProps, 'ariaLabel'> & {
-    role: string
-    content: string
-}
+const iniitalMessagesState = [
+    {
+        role: MESSAGE_ROLES.ASSISTANT,
+        ariaLabel: `KezBot said:`,
+        content:
+            "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work.",
+    },
+]
 
 export const ChatBot = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [isError, setIsError] = useState<boolean>(false)
 
-    const [messages, setMessages] = useState<MessageType[]>([
-        {
-            role: 'assistant',
-            ariaLabel: `KezBot said:`,
-            content:
-                "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work.",
-        },
-    ])
+    const [messages, setMessages] =
+        useState<MessageType[]>(iniitalMessagesState)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -41,18 +39,17 @@ export const ChatBot = () => {
     ) => {
         setIsError(false)
 
+        const latestMessages = [
+            ...messages,
+            {
+                role: 'user',
+                ariaLabel: `At ${getCurrentTime()} you said:`,
+                content: values.question,
+            },
+        ]
+        setMessages(latestMessages)
+
         try {
-            const timeOfUserQuestion = format(new Date(), 'k:mm:ss aaaa')
-
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                {
-                    role: 'user',
-                    ariaLabel: `At ${timeOfUserQuestion} you said:`,
-                    content: values.question,
-                },
-            ])
-
             setIsLoading(true)
 
             const response = await fetch('/api/completions', {
@@ -62,14 +59,7 @@ export const ChatBot = () => {
                 },
                 body: JSON.stringify({
                     question: values.question.replace(/\n/g, ' '), // OpenAI recommends replacing newlines with spaces for best results,
-                    messages: [
-                        ...messages,
-                        {
-                            role: 'user',
-                            ariaLabel: `At ${timeOfUserQuestion} you said:`,
-                            content: values.question,
-                        },
-                    ],
+                    messages: latestMessages,
                 }),
             })
 
@@ -81,41 +71,37 @@ export const ChatBot = () => {
             if (!data) return
 
             const reader = data.getReader()
-            const textDecoder = new TextDecoder()
+            const decoder = new TextDecoder()
 
+            let done = false
+            let isFirstChunk = true
             let answer = ''
-            const timeOfAssistantAnswer = format(new Date(), 'k:mm:ss aaaa')
 
             setIsLoading(false)
-
-            let isFirstChunk = true
-            let done = false
 
             while (!done) {
                 const { value, done: doneReading } = await reader.read()
                 done = doneReading
                 if (done) return
 
-                const chunkValue = textDecoder.decode(value)
-                answer += chunkValue
+                const chunk = decoder.decode(value)
+                answer += chunk
+
+                const assistantMessage = {
+                    role: MESSAGE_ROLES.ASSISTANT,
+                    ariaLabel: `At ${getCurrentTime()} KezBot said:`,
+                    content: answer,
+                }
 
                 if (isFirstChunk) {
                     setMessages((prevMessages) => [
                         ...prevMessages,
-                        {
-                            role: 'assistant',
-                            ariaLabel: `At ${timeOfAssistantAnswer} KezBot said:`,
-                            content: answer,
-                        },
+                        assistantMessage,
                     ])
                 } else {
                     setMessages((prevMessages) => [
                         ...prevMessages.slice(0, -1),
-                        {
-                            role: 'assistant',
-                            ariaLabel: `At ${timeOfAssistantAnswer} KezBot said:`,
-                            content: answer,
-                        },
+                        assistantMessage,
                     ])
                 }
 

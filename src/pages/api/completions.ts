@@ -1,17 +1,20 @@
+import { MESSAGE_ROLES } from '@/components/Message'
+import { generateEmbedding } from '@/helpers/generateEmbedding'
+import { getDocumentsRelatedToEmbedding } from '@/helpers/getDocumentsRelatedToEmbedding'
+import { getTokenLength } from '@/helpers/getMessageTokenLength'
+import { handleInvalidContentType } from '@/helpers/handleInvalidContentType'
+import { handleInvalidMethod } from '@/helpers/handleInvalidMethod'
+import { handleInvalidPayload } from '@/helpers/handleInvalidPayload'
 import {
     streamCompletionsReponse,
     StreamCompletionsResponsePayload,
 } from '@/helpers/streamCompletionsReponse'
-import { supabaseClient } from '@/lib/supabase/supabaseClient'
-import GPT3Tokenizer from 'gpt3-tokenizer'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
 export const config = {
     runtime: 'edge',
 }
-
-const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
 export const completionsSchema = z
     .object({
@@ -27,145 +30,97 @@ export const completionsSchema = z
 
 const handler = async (req: NextRequest): Promise<Response> => {
     if (req.method !== 'POST') {
-        return new Response(null, {
-            status: 405,
-            statusText: `Method ${req.method} Not Allowed`,
-        })
+        return handleInvalidMethod(req.method)
     }
 
     if (req.headers.get('Content-Type') !== 'application/json') {
-        return new Response(null, {
-            status: 406,
-            statusText: 'Invalid Content-Type Header',
-        })
+        return handleInvalidContentType()
     }
 
     const reqBody = await req.json()
     const parsedReqBody = completionsSchema.safeParse(reqBody)
-
     if (!parsedReqBody.success) {
-        return new Response(null, {
-            status: 400,
-            statusText: 'Invalid Payload',
-        })
+        return handleInvalidPayload()
     }
 
-    // Generate a one-time embedding for the question itself
-    const embeddingResponse = await fetch(
-        'https://api.openai.com/v1/embeddings',
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: 'text-embedding-ada-002',
-                input: parsedReqBody.data.question,
-            }),
-        }
-    )
-    const embeddingResponseJson = await embeddingResponse.json()
-    const [{ embedding }] = embeddingResponseJson.data
+    const embedding = await generateEmbedding(parsedReqBody.data.question)
+    const relatedDocuments = await getDocumentsRelatedToEmbedding(embedding)
 
-    const { data: documents } = await supabaseClient.rpc('match_documents', {
-        query_embedding: embedding,
-        similarity_threshold: 0.8,
-        match_count: 10,
-    })
-
-    const tokenizer = new GPT3Tokenizer({ type: 'gpt3' })
-    let noOfTokensForContext = 0
     let context = ''
+    let contextTokenLength = 0
 
-    // Concat matched documents
-    if (documents) {
-        for (let i = 0; i < documents.length; i++) {
-            const document = documents[i]
-            const content = document.content
-            const encoded = tokenizer.encode(content)
-            noOfTokensForContext += encoded.text.length
+    if (relatedDocuments) {
+        for (let i = 0; i < relatedDocuments.length; i++) {
+            const relatedDocument = relatedDocuments[i]
+            contextTokenLength += getTokenLength(relatedDocument.content)
 
-            // Limit context to max 1500 tokens
-            if (noOfTokensForContext > 1500) {
+            if (contextTokenLength > 1500) {
                 break
             }
 
-            context += content.trim()
+            context += relatedDocument.content.trim()
         }
     }
 
     const systemMessage = {
-        role: 'system',
+        role: MESSAGE_ROLES.SYSTEM,
         content: `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`,
     }
-    const noOfTokensForSystemMessage = tokenizer.encode(systemMessage.content)
-        .text.length
+    const systemMessageTokenLength = getTokenLength(systemMessage.content)
 
-    const [iniitalAssistantMessage, ...conversation] =
-        parsedReqBody.data.messages
-    const noOfTokensForInitialAssistantMessage = tokenizer.encode(
-        iniitalAssistantMessage.content
-    ).text.length
+    const [assistantMessage, ...conversation] = parsedReqBody.data.messages
+    const assistantMessageTokenLength = getTokenLength(assistantMessage.content)
 
-    const maxNoOfTokensForRequest = 4096
+    const maxRequestTokenLength = 4096
 
-    const maxNoOfAllowableTokensForMessages =
-        maxNoOfTokensForRequest -
-        noOfTokensForSystemMessage -
-        noOfTokensForContext -
-        noOfTokensForInitialAssistantMessage
+    const maxMessagesTokenLength =
+        maxRequestTokenLength -
+        systemMessageTokenLength -
+        contextTokenLength -
+        assistantMessageTokenLength
 
-    let noOfTokensForMessages = 0
-    let noOfOldMessagesThatNeedRemoving = 0
+    let messagesTokenLength = 0
+    let noOfOldMessagesToRemove = 0
 
-    const removeOldMessages = (noOfTokensForOldestMessage: number | null) => {
+    const removeOldestMessage = (oldestMessageTokenLength: number | null) => {
         if (
-            noOfTokensForMessages < maxNoOfAllowableTokensForMessages ||
-            !noOfTokensForOldestMessage
+            messagesTokenLength < maxMessagesTokenLength ||
+            !oldestMessageTokenLength
         )
             return
 
-        noOfOldMessagesThatNeedRemoving++
-        noOfTokensForMessages -= noOfTokensForOldestMessage
+        noOfOldMessagesToRemove++
+        messagesTokenLength -= oldestMessageTokenLength
 
-        const newOldestMessage =
-            conversation?.[noOfOldMessagesThatNeedRemoving].content
-        const noOfTokensForNewOldestMessage = newOldestMessage
-            ? tokenizer.encode(newOldestMessage).text.length
+        const newOldestMessage = conversation?.[noOfOldMessagesToRemove]
+        const newOldestMessageTokenLength = newOldestMessage
+            ? getTokenLength(newOldestMessage.content)
             : null
 
-        removeOldMessages(noOfTokensForNewOldestMessage)
+        removeOldestMessage(newOldestMessageTokenLength)
     }
 
     for (let i = 0; i < conversation.length; i++) {
         const message = conversation[i]
-        const content = message.content
-        const encoded = tokenizer.encode(content)
-        const noOfTokensForMessage = encoded.text.length
-        noOfTokensForMessages += noOfTokensForMessage
 
-        if (noOfTokensForMessages > maxNoOfAllowableTokensForMessages) {
-            removeOldMessages(
-                tokenizer.encode(
-                    conversation[noOfOldMessagesThatNeedRemoving].content
-                ).text.length
+        const mesasageTokenLength = getTokenLength(message.content)
+        messagesTokenLength += mesasageTokenLength
+
+        if (messagesTokenLength > maxMessagesTokenLength) {
+            removeOldestMessage(
+                getTokenLength(conversation[noOfOldMessagesToRemove].content)
             )
         }
     }
 
     const mostRecentMessages = conversation.slice(
-        noOfOldMessagesThatNeedRemoving,
+        noOfOldMessagesToRemove,
         conversation.length
     )
 
     const payload: StreamCompletionsResponsePayload = {
         model: 'gpt-3.5-turbo',
-        messages: [
-            systemMessage,
-            iniitalAssistantMessage,
-            ...mostRecentMessages,
-        ],
+        messages: [systemMessage, assistantMessage, ...mostRecentMessages],
         max_tokens: 512,
         temperature: 0.2,
         frequency_penalty: 0,
