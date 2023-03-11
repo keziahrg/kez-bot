@@ -1,8 +1,8 @@
-import { supabaseClient } from '@/lib/supabase'
 import {
-    streamCompletionReponse,
-    StreamCompletionResponsePayload,
-} from '../../helpers'
+    streamCompletionsReponse,
+    StreamCompletionsResponsePayload,
+} from '@/helpers/streamCompletionsReponse'
+import { supabaseClient } from '@/lib/supabase/supabaseClient'
 import GPT3Tokenizer from 'gpt3-tokenizer'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
@@ -13,7 +13,7 @@ export const config = {
 
 const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
-const chatCompletionSchema = z
+export const completionsSchema = z
     .object({
         question: z.string().min(1, 'Please enter a question to continue.'),
         messages: z
@@ -24,7 +24,6 @@ const chatCompletionSchema = z
             .array(),
     })
     .required()
-    .strict()
 
 const handler = async (req: NextRequest): Promise<Response> => {
     if (req.method !== 'POST') {
@@ -41,20 +40,15 @@ const handler = async (req: NextRequest): Promise<Response> => {
         })
     }
 
-    const body = await req.json()
-    const response = chatCompletionSchema.safeParse(body)
+    const reqBody = await req.json()
+    const parsedReqBody = completionsSchema.safeParse(reqBody)
 
-    if (!response.success) {
+    if (!parsedReqBody.success) {
         return new Response(null, {
             status: 400,
             statusText: 'Invalid Payload',
         })
     }
-
-    const { question, messages } = response.data
-
-    // OpenAI recommends replacing newlines with spaces for best results
-    const formattedQuestion = question.replace(/\n/g, ' ')
 
     // Generate a one-time embedding for the question itself
     const embeddingResponse = await fetch(
@@ -67,7 +61,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
             },
             body: JSON.stringify({
                 model: 'text-embedding-ada-002',
-                input: formattedQuestion,
+                input: parsedReqBody.data.question,
             }),
         }
     )
@@ -101,18 +95,20 @@ const handler = async (req: NextRequest): Promise<Response> => {
         }
     }
 
-    const systemMessage = `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`
-    const noOfTokensForSystemMessage =
-        tokenizer.encode(systemMessage).text.length
+    const systemMessage = {
+        role: 'system',
+        content: `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`,
+    }
+    const noOfTokensForSystemMessage = tokenizer.encode(systemMessage.content)
+        .text.length
 
-    const iniitalAssistantMessage =
-        "Hello! I'm KezBot, your go-to source for information about Keziah Rackley-Gale. Ask me anything you want to know about her background, accomplishments, or current work."
+    const [iniitalAssistantMessage, ...conversation] =
+        parsedReqBody.data.messages
     const noOfTokensForInitialAssistantMessage = tokenizer.encode(
-        iniitalAssistantMessage
+        iniitalAssistantMessage.content
     ).text.length
 
     const maxNoOfTokensForRequest = 4096
-    const maxNoOfTokensForResponse = 512
 
     const maxNoOfAllowableTokensForMessages =
         maxNoOfTokensForRequest -
@@ -134,7 +130,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
         noOfTokensForMessages -= noOfTokensForOldestMessage
 
         const newOldestMessage =
-            messages?.[noOfOldMessagesThatNeedRemoving].content
+            conversation?.[noOfOldMessagesThatNeedRemoving].content
         const noOfTokensForNewOldestMessage = newOldestMessage
             ? tokenizer.encode(newOldestMessage).text.length
             : null
@@ -142,8 +138,8 @@ const handler = async (req: NextRequest): Promise<Response> => {
         removeOldMessages(noOfTokensForNewOldestMessage)
     }
 
-    for (let i = 0; i < messages.length; i++) {
-        const message = messages[i]
+    for (let i = 0; i < conversation.length; i++) {
+        const message = conversation[i]
         const content = message.content
         const encoded = tokenizer.encode(content)
         const noOfTokensForMessage = encoded.text.length
@@ -152,28 +148,25 @@ const handler = async (req: NextRequest): Promise<Response> => {
         if (noOfTokensForMessages > maxNoOfAllowableTokensForMessages) {
             removeOldMessages(
                 tokenizer.encode(
-                    messages[noOfOldMessagesThatNeedRemoving].content
+                    conversation[noOfOldMessagesThatNeedRemoving].content
                 ).text.length
             )
         }
     }
 
-    const mostRecentMessages = [...messages].slice(
+    const mostRecentMessages = conversation.slice(
         noOfOldMessagesThatNeedRemoving,
-        messages.length
+        conversation.length
     )
 
-    const payload: StreamCompletionResponsePayload = {
+    const payload: StreamCompletionsResponsePayload = {
         model: 'gpt-3.5-turbo',
         messages: [
-            { role: 'system', content: systemMessage },
-            {
-                role: 'assistant',
-                content: iniitalAssistantMessage,
-            },
+            systemMessage,
+            iniitalAssistantMessage,
             ...mostRecentMessages,
         ],
-        max_tokens: maxNoOfTokensForResponse,
+        max_tokens: 512,
         temperature: 0.2,
         frequency_penalty: 0,
         presence_penalty: 0.6,
@@ -181,9 +174,13 @@ const handler = async (req: NextRequest): Promise<Response> => {
         n: 1,
     }
 
-    const stream = await streamCompletionReponse(payload)
+    const streamResponse = await streamCompletionsReponse(payload)
 
-    return new Response(stream, {
+    if ('ok' in streamResponse) {
+        return streamResponse
+    }
+
+    return new Response(streamResponse, {
         headers: { 'Content-Type': 'text/event-stream' },
     })
 }

@@ -1,42 +1,63 @@
-import { MessageType } from '@/components/ChatBot'
 import {
     createParser,
     ParsedEvent,
     ReconnectInterval,
 } from 'eventsource-parser'
 import { BufferSource } from 'stream/web'
+import { z } from 'zod'
 
-const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
+const API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? ''
 
-export interface StreamCompletionResponsePayload {
-    model: string
-    messages: MessageType[]
-    max_tokens: number
-    temperature: number
-    frequency_penalty: number
-    presence_penalty: number
-    stream: boolean
-    n: number
-}
+const streamCompletionsResponsePayloadSchema = z
+    .object({
+        model: z.string(),
+        messages: z
+            .object({
+                role: z.string(),
+                content: z.string(),
+            })
+            .array(),
+        max_tokens: z.number(),
+        temperature: z.number(),
+        frequency_penalty: z.number(),
+        presence_penalty: z.number(),
+        stream: z.boolean(),
+        n: z.number(),
+    })
+    .required()
+    .strict()
 
-export const streamCompletionReponse = async (
-    payload: StreamCompletionResponsePayload
+export type StreamCompletionsResponsePayload = z.infer<
+    typeof streamCompletionsResponsePayloadSchema
+>
+
+export const streamCompletionsReponse = async (
+    payload: StreamCompletionsResponsePayload
 ) => {
+    const parsedPayload =
+        streamCompletionsResponsePayloadSchema.safeParse(payload)
+
+    if (!parsedPayload.success) {
+        return new Response(null, {
+            status: 400,
+            statusText: 'Invalid Payload',
+        })
+    }
+
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${API_KEY}`,
         },
         method: 'POST',
         body: JSON.stringify(payload),
     })
 
     let counter = 0
-
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
 
-    const stream = new ReadableStream<Uint8Array>({
+    const responseStream = new ReadableStream<Uint8Array>({
         async start(controller) {
             function onParse(event: ParsedEvent | ReconnectInterval) {
                 if (event.type === 'event') {
@@ -52,6 +73,7 @@ export const streamCompletionReponse = async (
 
                         const queue = encoder.encode(text)
                         controller.enqueue(queue)
+
                         counter++
                     } catch (e) {
                         controller.error(e)
@@ -67,5 +89,5 @@ export const streamCompletionReponse = async (
         },
     })
 
-    return stream
+    return responseStream
 }
