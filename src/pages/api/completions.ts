@@ -64,7 +64,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
 
     const systemMessage = {
         role: MESSAGE_ROLES.SYSTEM,
-        content: `You are a very enthusiastic chatbot named KezBot who loves to help people! Your sole job is to answer questions about Keziah Rackley-Gale. Answer the questions about Keziah as truthfully as possible using the provided context. If the answer to the question is not explicitly contained within the provided context, you must only respond "Sorry, I haven't been taught the answer to that question :(". /n---/nContext: /n${context}`,
+        content: `You are a very enthusiastic chatbot named KezBot who loves to help people! Your sole job is to answer questions about Keziah Rackley-Gale. Answer the questions about Keziah as truthfully as possible using the provided context. If the answer to the question is not explicitly contained within the provided context, you must limit your response to "Sorry, I haven't been taught the answer to that question :(". /n---/nContext: /n${context}`,
     }
     const systemMessageTokenLength = getTokenLength(systemMessage.content)
 
