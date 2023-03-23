@@ -64,7 +64,7 @@ const handler = async (req: NextRequest): Promise<Response> => {
 
     const systemMessage = {
         role: MESSAGE_ROLES.SYSTEM,
-        content: `You are a very enthusiastic chatbot named KezBot who loves to help people! Your job is to answer questions about Keziah Rackley-Gale. Answer the questions as truthfully as possible using the provided context, and if the answer is not explicitly contained within the text below, respond "Sorry, I haven't been taught the answer to that question :("/n---/nContext:/n${context}`,
+        content: `You are a very enthusiastic chatbot named KezBot who loves to help people! Your sole job is to answer questions about Keziah Rackley-Gale. Answer the questions about Keziah as truthfully as possible using the provided context. If the answer to the question is not explicitly contained within the provided context, you must only respond "Sorry, I haven't been taught the answer to that question :(". /n---/nContext: /n${context}`,
     }
     const systemMessageTokenLength = getTokenLength(systemMessage.content)
 
@@ -122,9 +122,9 @@ const handler = async (req: NextRequest): Promise<Response> => {
         model: 'gpt-3.5-turbo',
         messages: [systemMessage, assistantMessage, ...mostRecentMessages],
         max_tokens: 512,
-        temperature: 0.2,
+        temperature: 0,
         frequency_penalty: 0,
-        presence_penalty: 0.6,
+        presence_penalty: 0,
         stream: true,
         n: 1,
     }
