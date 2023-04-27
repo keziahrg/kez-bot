@@ -3,6 +3,7 @@ import { Header } from '@/components/Header'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { ServerThemeProvider } from 'next-themes'
 import { ThemeProvider } from 'next-themes'
+import { Analytics } from '@vercel/analytics/react'
 
 export default function RootLayout({
     children,
@@ -23,6 +24,7 @@ export default function RootLayout({
                     <main className="flex h-full flex-grow flex-col overflow-hidden">
                         {children}
                     </main>
+                    <Analytics />
                 </body>
             </html>
         </ServerThemeProvider>
