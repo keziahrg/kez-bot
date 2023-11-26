@@ -23,7 +23,7 @@
     "react-dom": "18.2.0",
     "react-hook-form": "7.48.2",
     "react-intersection-observer": "9.5.3",
-    "tailwind-merge": "^2.0.0",
+    "tailwind-merge": "2.0.0",
     "zod": "3.22.4"
   },
   "devDependencies": {
@@ -31,15 +31,14 @@
     "@types/react": "18.2.37",
     "@types/react-dom": "18.2.15",
     "@vercel/git-hooks": "1.0.0",
-    "autoprefixer": "^10.4.13",
+    "autoprefixer": "10.4.13",
     "eslint": "8.53.0",
     "eslint-config-next": "14.0.2",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-prettier": "9.0.0",
     "lint-staged": "15.0.2",
     "postcss": "8.4.31",
-    "prettier": "^3.1.0",
-    "prettier-plugin-tailwindcss": "^0.5.7",
-    "supabase": "^1.38.7",
+    "prettier": "3.1.0",
+    "prettier-plugin-tailwindcss": "0.5.7",
     "tailwindcss": "3.3.5",
     "typescript": "5.2.2"
   }

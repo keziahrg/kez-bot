@@ -7,7 +7,8 @@ KezBot is a custom-built chatbot powered by OpenAI's GPT-3.5-turbo model. It's d
 KezBot is built with the following technologies:
 
 - [OpenAI](https://openai.com/) - KezBot's AI engine, which powers its natural language processing capabilities.
-- [Vercel KV](https://vercel.com/storage/kv) - KezBot's database provider, which stores embeddings used to provide KezBot context.
+- [Vercel Postgres](https://vercel.com/storage/postgres) - KezBot's database provider, which stores embeddings used to provide KezBot context.
+- [PG Vector](https://github.com/pgvector/pgvector-node) — Empowers KezBot with advanced vector similarity search capabilities on stored embeddings. This enables KezBot to enhance contextual understanding, providing more nuanced and relevant responses in conversations.
 - [Next.js](https://beta.nextjs.org/) - KezBot's frontend framework. This project uses the App Router, which enables the use of bleeding edge features such as React Server Components.
 - [Tailwind CSS](https://tailwindcss.com/) - KezBot's CSS framework, which provides a customised set of styling utilities.
 
