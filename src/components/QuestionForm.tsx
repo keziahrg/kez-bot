@@ -1,39 +1,35 @@
 "use client";
 
+import { chatCompletionsSchema } from "@/app/api/chat/route";
 import { zodResolver } from "@hookform/resolvers/zod";
-// import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-// export const questionFormSchema = completionsSchema
-//   .pick({ question: true })
-//   .required()
-//   .strict();
+export const questionFormSchema = chatCompletionsSchema
+  .pick({ question: true })
+  .strict();
 
-// export type QuestionFormSchema = z.infer<typeof questionFormSchema>;
+export type QuestionForm = z.infer<typeof questionFormSchema>;
 
-type QuestionFormProps = {
-  isLoading: boolean;
-};
+export const QuestionForm = () => {
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { errors },
+  } = useForm<QuestionForm>({
+    resolver: zodResolver(questionFormSchema),
+  });
 
-export const QuestionForm = ({ isLoading }: QuestionFormProps) => {
-  //   const {
-  //     handleSubmit,
-  //     register,
-  //     reset,
-  //     formState: { errors },
-  //   } = useForm<QuestionFormSchema>({
-  //     resolver: zodResolver(questionFormSchema),
-  //   });
-
-  //   const handleOnSubmit = handleSubmit((values) => {
-  //     onSubmit(values)
-  //     reset();
-  //   });
+  const handleOnSubmit = handleSubmit((values) => {
+    // onSubmit(values);
+    reset();
+  });
 
   return (
     <div className="sticky bottom-0 left-0 right-0 bg-white bg-opacity-60 pb-8 pt-4 backdrop-blur-md dark:bg-black dark:bg-opacity-60 dark:text-white md:pb-16 md:pt-8">
       <form
-        // onSubmit={handleOnSubmit}
+        onSubmit={handleOnSubmit}
         className="relative mx-auto grid max-w-xl px-4"
       >
         <>
@@ -46,17 +42,17 @@ export const QuestionForm = ({ isLoading }: QuestionFormProps) => {
             placeholder="Ask a question"
             type="text"
             id="question"
-            disabled={isLoading}
+            // disabled={isLoading}
             autoComplete="off"
-            // {...register("question")}
+            {...register("question")}
           />
-          {/* {errors.question?.message ? (
+          {errors.question?.message ? (
             <p className="row-start-3 row-end-4 mt-4 text-xs text-pink">
               {errors.question.message}
             </p>
-          ) : null} */}
+          ) : null}
           <button
-            disabled={isLoading}
+            // disabled={isLoading}
             aria-label="Submit question"
             type="submit"
             className="background absolute bottom-0 right-8 top-0 row-start-2 row-end-3"
