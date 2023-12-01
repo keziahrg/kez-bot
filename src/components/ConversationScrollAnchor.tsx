@@ -19,10 +19,14 @@ export const ConversationScrollAnchor = ({
   useEffect(() => {
     if (isAtBottom && isLoading && !inView) {
       entry?.target.scrollIntoView({
-        block: "start",
+        block: "end",
       });
     }
   }, [inView, entry, isAtBottom, isLoading]);
 
-  return <div ref={ref}>{isLoading && <Loading />}</div>;
+  return (
+    <div ref={ref} className="pb-8 md:pb-16">
+      {isLoading && <Loading />}
+    </div>
+  );
 };

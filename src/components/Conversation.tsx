@@ -4,7 +4,7 @@ type ConversationProps = {
 
 export const Conversation = ({ children }: ConversationProps) => (
   <section
-    className="relative mx-auto flex h-auto w-full max-w-xl flex-grow flex-col gap-4 overflow-x-hidden overflow-y-scroll px-4 py-8 md:py-16"
+    className="relative mx-auto flex h-auto w-full max-w-xl flex-grow flex-col gap-4 overflow-x-hidden overflow-y-scroll px-4 pt-24 md:pt-28"
     id="conversation"
     aria-live="polite"
     aria-label="Chatbot conversation"

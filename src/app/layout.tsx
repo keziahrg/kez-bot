@@ -11,7 +11,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head />
-      <body className="flex h-full flex-col bg-grey-light dark:bg-grey-dark">
+      <body className="relative flex h-full flex-col bg-grey-light dark:bg-grey-dark">
         <Providers>
           <Header />
           <main className="flex h-full flex-grow flex-col overflow-hidden">
