@@ -1,9 +1,34 @@
 "use client";
 
-import { chatCompletionsSchema } from "@/app/api/chat/route";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { MESSAGE_ROLES } from "@/lib/constants";
+
+export const chatCompletionMessageSchema = z.object({
+  content: z.string().nullable(),
+  role: z.enum([
+    MESSAGE_ROLES.SYSTEM,
+    MESSAGE_ROLES.ASSISTANT,
+    MESSAGE_ROLES.USER,
+  ]),
+});
+
+export type ChatCompletionMessage = z.infer<typeof chatCompletionMessageSchema>;
+
+export const chatCompletionsSchema = z
+  .object({
+    question: z
+      .string({
+        required_error: "Please ask a question to proceed",
+      })
+      .trim()
+      .min(1, "Question cannot be empty"),
+    messages: chatCompletionMessageSchema
+      .array()
+      .min(1, "Messages cannot be empty"),
+  })
+  .strict();
 
 export const questionFormSchema = chatCompletionsSchema
   .pick({ question: true })

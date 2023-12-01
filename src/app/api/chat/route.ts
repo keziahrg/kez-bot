@@ -2,10 +2,9 @@
 // Note, despite the name, this does not add any polyfills, but expects them to be provided if needed.
 import "openai/shims/web";
 import OpenAI from "openai";
-import { z } from "zod";
-import { MESSAGE_ROLES } from "@/lib/constants";
 import { NextResponse } from "next/server";
 import { createParser, EventSourceParser } from "eventsource-parser";
+import { chatCompletionsSchema } from "@/components/QuestionForm";
 
 export const runtime = "edge";
 
@@ -13,31 +12,6 @@ const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? "",
   dangerouslyAllowBrowser: true,
 });
-
-const chatCompletionMessageSchema = z.object({
-  content: z.string().nullable(),
-  role: z.enum([
-    MESSAGE_ROLES.SYSTEM,
-    MESSAGE_ROLES.ASSISTANT,
-    MESSAGE_ROLES.USER,
-  ]),
-});
-
-export type ChatCompletionMessage = z.infer<typeof chatCompletionMessageSchema>;
-
-export const chatCompletionsSchema = z
-  .object({
-    question: z
-      .string({
-        required_error: "Please ask a question to proceed",
-      })
-      .trim()
-      .min(1, "Question cannot be empty"),
-    messages: chatCompletionMessageSchema
-      .array()
-      .min(1, "Messages cannot be empty"),
-  })
-  .strict();
 
 export async function POST(req: Request) {
   if (req.headers.get("Content-Type") !== "application/json") {

@@ -1,7 +1,7 @@
-import { ChatCompletionMessage } from "@/app/api/chat/route";
 import { MESSAGE_ROLES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { HTMLAttributes } from "react";
+import { ChatCompletionMessage } from "./QuestionForm";
 
 export type MessageProps = HTMLAttributes<HTMLElement> & ChatCompletionMessage;
 
