@@ -18,12 +18,7 @@ export type ChatCompletionMessage = z.infer<typeof chatCompletionMessageSchema>;
 
 export const chatCompletionsSchema = z
   .object({
-    question: z
-      .string({
-        required_error: "Please ask a question to proceed",
-      })
-      .trim()
-      .min(1, "Question cannot be empty"),
+    question: z.string().trim().min(1, "Please ask a question to continue"),
     messages: chatCompletionMessageSchema
       .array()
       .min(1, "Messages cannot be empty"),
@@ -64,36 +59,34 @@ export const QuestionForm = ({
     <div className="sticky bottom-0 left-0 right-0 bg-white bg-opacity-60 pb-8 pt-4 backdrop-blur-md dark:bg-black dark:bg-opacity-60 dark:text-white md:pb-16 md:pt-8">
       <form
         onSubmit={handleOnSubmit}
-        className="relative mx-auto grid max-w-xl px-4"
+        className="relative mx-auto flex max-w-xl px-4"
       >
-        <>
-          <label className="sr-only row-start-1 row-end-2" htmlFor="question">
-            Ask a question
-          </label>
-          <input
-            aria-required
-            className="row-start-2 row-end-3 w-full appearance-none rounded-3xl border-2 bg-grey-light py-4 pl-4 pr-12 dark:border-white dark:bg-grey-dark"
-            placeholder="Ask a question"
-            type="text"
-            id="question"
-            disabled={isLoading}
-            autoComplete="off"
-            {...register("question")}
-          />
-          {errors.question?.message ? (
-            <p className="row-start-3 row-end-4 mt-4 text-xs text-pink">
-              {errors.question.message}
-            </p>
-          ) : null}
-          <button
-            disabled={isLoading}
-            aria-label="Submit question"
-            type="submit"
-            className="background absolute bottom-0 right-8 top-0 row-start-2 row-end-3"
-          >
-            <SendSvg />
-          </button>
-        </>
+        <label className="sr-only" htmlFor="question">
+          Ask a question
+        </label>
+        <input
+          aria-required
+          className="w-full appearance-none rounded-3xl border-2 bg-grey-light py-4 pl-4 pr-12 dark:border-white dark:bg-grey-dark"
+          placeholder="Ask a question"
+          type="text"
+          id="question"
+          disabled={isLoading}
+          autoComplete="off"
+          {...register("question")}
+        />
+        {errors.question?.message ? (
+          <p className="absolute bottom-0 translate-y-full pt-2 text-xs text-pink">
+            {errors.question.message}
+          </p>
+        ) : null}
+        <button
+          disabled={isLoading}
+          aria-label="Submit question"
+          type="submit"
+          className="background absolute bottom-0 right-8 top-0"
+        >
+          <SendSvg />
+        </button>
       </form>
     </div>
   );

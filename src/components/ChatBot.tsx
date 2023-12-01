@@ -113,11 +113,11 @@ export const ChatBot = () => {
 
   return (
     <>
-      {error && <ErrorMessage />}
       <Conversation>
         {messages.map((message, index) => (
           <Message key={index} {...message} />
         ))}
+        {error ? <ErrorMessage /> : null}
         <ConversationScrollAnchor
           isLoading={status === CHAT_BOT_STATUS.GENERATING_MESSAGE}
         />
