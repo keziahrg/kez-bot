@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     if (!response.ok) {
       if (response.body) {
         const reader = response.body.getReader();
-        return new ReadableStream({
+        const stream = new ReadableStream({
           async start(controller) {
             const { done, value } = await reader.read();
             if (!done) {
@@ -63,11 +63,19 @@ export async function POST(req: Request) {
             }
           },
         });
+
+        return new Response(stream, {
+          headers: { "Content-Type": "text/event-stream" },
+        });
       } else {
-        return new ReadableStream({
+        const stream = new ReadableStream({
           start(controller) {
             controller.error(new Error("Response error: No response body"));
           },
+        });
+
+        return new Response(stream, {
+          headers: { "Content-Type": "text/event-stream" },
         });
       }
     }
