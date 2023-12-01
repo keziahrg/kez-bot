@@ -1,28 +1,37 @@
 "use client";
 
 import { chatCompletionsSchema } from "@/app/api/chat/route";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 export const questionFormSchema = chatCompletionsSchema
   .pick({ question: true })
   .strict();
 
-export type QuestionForm = z.infer<typeof questionFormSchema>;
+export type QuestionFormSchema = z.infer<typeof questionFormSchema>;
 
-export const QuestionForm = () => {
+type QuestionFormProps = {
+  submitMessage: SubmitHandler<QuestionFormSchema>;
+  isLoading: boolean;
+};
+
+export const QuestionForm = ({
+  isLoading,
+  // TODO: look into server actions
+  submitMessage,
+}: QuestionFormProps) => {
   const {
     handleSubmit,
     register,
     reset,
     formState: { errors },
-  } = useForm<QuestionForm>({
+  } = useForm<QuestionFormSchema>({
     resolver: zodResolver(questionFormSchema),
   });
 
   const handleOnSubmit = handleSubmit((values) => {
-    // onSubmit(values);
+    submitMessage(values);
     reset();
   });
 
@@ -42,7 +51,7 @@ export const QuestionForm = () => {
             placeholder="Ask a question"
             type="text"
             id="question"
-            // disabled={isLoading}
+            disabled={isLoading}
             autoComplete="off"
             {...register("question")}
           />
@@ -52,7 +61,7 @@ export const QuestionForm = () => {
             </p>
           ) : null}
           <button
-            // disabled={isLoading}
+            disabled={isLoading}
             aria-label="Submit question"
             type="submit"
             className="background absolute bottom-0 right-8 top-0 row-start-2 row-end-3"
