@@ -4,7 +4,6 @@ import "openai/shims/web";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createParser, EventSourceParser } from "eventsource-parser";
-import { chatCompletionsSchema } from "@/components/QuestionForm";
 
 export const runtime = "edge";
 
@@ -118,7 +117,7 @@ const createEventStreamTransformer = () => {
           const parsedData = JSON.parse(event.data);
           const message = parsedData?.choices?.[0]?.delta?.content;
           if (message) {
-            controller.enqueue(message);
+            controller.enqueue(new TextEncoder().encode(message));
           }
         }
       });
