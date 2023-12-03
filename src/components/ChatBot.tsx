@@ -8,7 +8,7 @@ import { ConversationScrollAnchor } from "./ConversationScrollAnchor";
 import { useState } from "react";
 import { CHAT_BOT_STATUS, MESSAGE_ROLES } from "@/lib/constants";
 
-const initalMessages = [
+const initalMessagesState = [
   {
     role: MESSAGE_ROLES.ASSISTANT,
     content:
@@ -20,7 +20,7 @@ export type ChatBotStatus =
   (typeof CHAT_BOT_STATUS)[keyof typeof CHAT_BOT_STATUS];
 
 export const ChatBot = () => {
-  const [messages, setMessages] = useState<MessageProps[]>(initalMessages);
+  const [messages, setMessages] = useState<MessageProps[]>(initalMessagesState);
   const [status, setStatus] = useState<ChatBotStatus>(
     CHAT_BOT_STATUS.AWAITING_MESSAGE
   );
@@ -124,7 +124,6 @@ export const ChatBot = () => {
       </Conversation>
       <QuestionForm
         isLoading={status === CHAT_BOT_STATUS.GENERATING_MESSAGE}
-        // TODO: look into server actions
         submitMessage={handleSubmitMessage}
       />
     </>

@@ -1,5 +1,3 @@
-"use client";
-
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -38,7 +36,6 @@ type QuestionFormProps = {
 
 export const QuestionForm = ({
   isLoading,
-  // TODO: look into server actions
   submitMessage,
 }: QuestionFormProps) => {
   const {
