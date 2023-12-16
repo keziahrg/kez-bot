@@ -7,10 +7,7 @@
     "build": "prisma generate --no-engine --schema=./src/prisma/schema.prisma && prisma db push --schema=./src/prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "prisma db seed --schema=./src/prisma/schema.prisma"
-  },
-  "prisma": {
-    "seed": "ts-node -r ./tsconfig-paths.js --compiler-options {\"module\":\"CommonJS\"} ./src/prisma/seed.ts"
+    "prisma:seed": "DOTENV_CONFIG_PATH=.env ts-node -r ./tsconfig-paths.js -r 'dotenv-flow/config' --compiler-options '{\"module\":\"CommonJS\"}' ./src/prisma/seed.ts"
   },
   "git": {
     "pre-commit": "npx lint-staged"
@@ -22,6 +19,7 @@
     "@vercel/postgres": "0.5.1",
     "clsx": "2.0.0",
     "date-fns": "2.30.0",
+    "dotenv-flow": "^4.0.1",
     "eventsource-parser": "1.1.1",
     "next": "14.0.2",
     "next-themes": "0.2.1",
@@ -51,6 +49,6 @@
     "tailwindcss": "3.3.5",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "5.2.2"
   }
 }
