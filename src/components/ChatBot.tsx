@@ -5,8 +5,8 @@ import { Conversation } from "./Conversation";
 import { ErrorMessage } from "./ErrorMessage";
 import { QuestionForm, QuestionFormSchema } from "./QuestionForm";
 import { ConversationScrollAnchor } from "./ConversationScrollAnchor";
-import { useState } from "react";
 import { CHAT_BOT_STATUS, MESSAGE_ROLES } from "@/lib/constants";
+import { useState } from "react";
 
 const initalMessagesState = [
   {
@@ -30,12 +30,14 @@ export const ChatBot = () => {
     setStatus(CHAT_BOT_STATUS.GENERATING_MESSAGE);
     setError(undefined);
 
+    const sanitisedQuestion = values.question.trim();
+
     try {
       setMessages((previousMessages) => [
         ...previousMessages,
         {
           role: MESSAGE_ROLES.USER,
-          content: values.question,
+          content: sanitisedQuestion,
         },
       ]);
 
@@ -45,13 +47,12 @@ export const ChatBot = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // OpenAI recommends replacing newlines with spaces for best results,
-          question: values.question.replace(/\n/g, " "),
+          question: sanitisedQuestion,
           messages: [
             ...messages,
             {
               role: MESSAGE_ROLES.USER,
-              content: values.question,
+              content: sanitisedQuestion,
             },
           ],
         }),

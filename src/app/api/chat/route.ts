@@ -4,13 +4,11 @@ import "openai/shims/web";
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createParser, EventSourceParser } from "eventsource-parser";
+import { openai, generateEmbedding } from "@/lib/openai";
+import { MESSAGE_ROLES } from "@/lib/constants";
+import { getContextDocumentsByEmbedding } from "@/lib/utils";
 
 export const runtime = "edge";
-
-const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY ?? "",
-  dangerouslyAllowBrowser: true,
-});
 
 export async function POST(req: Request) {
   if (req.headers.get("Content-Type") !== "application/json") {
@@ -23,20 +21,29 @@ export async function POST(req: Request) {
   try {
     const reqBody = await req.json();
 
+    const embedding = await generateEmbedding(reqBody.question);
+    const contextDocuments = await getContextDocumentsByEmbedding(embedding);
+
+    let context = "";
+
+    for (const contextDocument of contextDocuments) {
+      context += contextDocument?.content?.trim() ?? "";
+    }
+
     const response = await openai.chat.completions
       .create({
         model: "gpt-3.5-turbo",
         messages: [
-          // {
-          //   role: MESSAGE_ROLES.SYSTEM,
-          //   content: `You are a helpful chatbot named KezBot. Your job is to answer questions about a woman named Keziah Rackley-Gale. You will be provided with a document about Keziah (delimited by triple quotes) and a question. Your task is to answer the question using only the provided document. If the document does not contain the information needed to answer the question then simply write: "Sorry, I haven't been taught the answer to that question :("./n"""/n${context}/n"""/n`,
-          // },
+          {
+            role: MESSAGE_ROLES.SYSTEM,
+            content: `You are a helpful chatbot named KezBot. Your job is to answer questions about a woman named Keziah Rackley-Gale. You will be provided with a document about Keziah (delimited by triple quotes) and a question. Your task is to answer the question using only the provided document. If the document does not contain the information needed to answer the question then simply write: "Sorry, I haven't been taught the answer to that question :("./n"""/n${context}/n"""/n`,
+          },
           ...reqBody.messages,
         ],
         stream: true,
         max_tokens: 512,
-        temperature: 0.2,
-        frequency_penalty: 0,
+        temperature: 0,
+        frequency_penalty: -2,
         presence_penalty: 0,
         n: 1,
       })

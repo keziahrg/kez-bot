@@ -3,16 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "prisma generate --no-engine --schema=./src/prisma/schema.prisma && next dev",
+    "build": "prisma generate --no-engine --schema=./src/prisma/schema.prisma && prisma db push --schema=./src/prisma/schema.prisma && prisma db seed --schema=./src/prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "next lint"
+  },
+  "prisma": {
+    "seed": "ts-node -r ./tsconfig-paths.js --compiler-options {\"module\":\"CommonJS\"} ./src/prisma/seed.ts"
   },
   "git": {
     "pre-commit": "npx lint-staged"
   },
   "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "@prisma/extension-accelerate": "^0.6.2",
     "@vercel/analytics": "1.1.1",
+    "@vercel/postgres": "0.5.1",
     "clsx": "2.0.0",
     "date-fns": "2.30.0",
     "eventsource-parser": "1.1.1",
@@ -40,7 +46,9 @@
     "postcss": "8.4.31",
     "prettier": "3.1.0",
     "prettier-plugin-tailwindcss": "0.5.7",
+    "prisma": "5.7.0",
     "tailwindcss": "3.3.5",
+    "tsconfig-paths": "4.2.0",
     "typescript": "5.2.2"
   }
 }

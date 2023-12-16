@@ -3,6 +3,8 @@ import { Header } from "@/components/Header";
 import { Analytics } from "@vercel/analytics/react";
 import { Providers } from "./providers";
 
+export const runtime = "edge";
+
 export default function RootLayout({
   children,
 }: {
