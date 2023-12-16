@@ -23,7 +23,7 @@ async function main() {
     }
   } catch (error) {
     console.error(
-      "Error checking if a mock document already exists in the database."
+      "Error checking if a document already exists in the database."
     );
     throw error;
   }
