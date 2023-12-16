@@ -6,8 +6,8 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error("process.env.OPENAI_API_KEY is not defined. Please set it.");
 }
 
-if (!process.env.POSTGRES_URL) {
-  throw new Error("process.env.POSTGRES_URL is not defined. Please set it.");
+if (!process.env.DATABASE_URL) {
+  throw new Error("process.env.DATABASE_URL is not defined. Please set it.");
 }
 
 async function main() {
