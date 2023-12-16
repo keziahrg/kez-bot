@@ -24,7 +24,7 @@ To run KezBot locally, you'll need to follow these steps:
 3. Create a `.env.local` file and add your Vercel Postgres variables,and OpenAI API key.
 4. Create a JSON file at `src/data/documents.json` with an array of strings containing made-up facts about me.
 5. Sign up/log in to your Prisma account, set up [Prisma Accelerate](https://www.prisma.io/data-platform/accelerate), and set your POSTGRES_PRISMA_URL environment variable to your Prisma Accelerate URL.
-6. Run `npx prisma db seed` to seed your database
+6. Run `npm run db:seed` to seed your database
 7. Start the development server by running `npm run dev`.
 8. Open [http://localhost:3000](http://localhost:3000) in your browser
 9. Start asking questions

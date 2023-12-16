@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate --no-engine --schema=./src/prisma/schema.prisma && next dev",
-    "build": "prisma generate --no-engine --schema=./src/prisma/schema.prisma && prisma db push --schema=./src/prisma/schema.prisma && prisma db seed --schema=./src/prisma/schema.prisma && next build",
+    "build": "prisma generate --no-engine --schema=./src/prisma/schema.prisma && prisma db push --schema=./src/prisma/schema.prisma && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:seed": "prisma db seed --schema=./src/prisma/schema.prisma"
   },
   "prisma": {
     "seed": "ts-node -r ./tsconfig-paths.js --compiler-options {\"module\":\"CommonJS\"} ./src/prisma/seed.ts"
