@@ -46,6 +46,7 @@ export async function POST(req: Request) {
         frequency_penalty: -2,
         presence_penalty: 0,
         n: 1,
+        stop: []
       })
       .asResponse();
 

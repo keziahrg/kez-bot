@@ -18,7 +18,7 @@ export const getContextDocumentsByEmbedding = async (embedding: number[]) => {
   FROM documents
   where 1 - (embedding <=> ${vectorQuery}::vector) > .5
   ORDER BY  similarity DESC
-  LIMIT 8;
+  LIMIT 5;
 `;
 
   return documents as Array<Document & { similarity: number }>;
