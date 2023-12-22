@@ -21,6 +21,7 @@
     "date-fns": "2.30.0",
     "dotenv-flow": "4.0.1",
     "eventsource-parser": "1.1.1",
+    "js-tiktoken": "1.0.8",
     "next": "14.0.2",
     "next-themes": "0.2.1",
     "openai": "4.11.0",

@@ -5,8 +5,11 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createParser, EventSourceParser } from "eventsource-parser";
 import { openai, generateEmbedding } from "@/lib/openai";
-import { MESSAGE_ROLES } from "@/lib/constants";
-import { getContextDocumentsByEmbedding } from "@/lib/utils";
+import { GPT_MODEL, MESSAGE_ROLES } from "@/lib/constants";
+import {
+  getContextDocumentsByEmbedding,
+  removeOldMessagesFromConversation,
+} from "@/lib/utils";
 
 export const runtime = "edge";
 
@@ -30,23 +33,27 @@ export async function POST(req: Request) {
       context += contextDocument?.content?.trim() ?? "";
     }
 
+    const conversation = [
+      {
+        role: MESSAGE_ROLES.SYSTEM,
+        content: `You are a helpful chatbot named KezBot. Your job is to answer questions about a woman named Keziah Rackley-Gale. You will be provided with a document about Keziah (delimited by triple quotes) and a question. Your task is to answer the question using only the provided document. If the document does not contain the information needed to answer the question then simply write: "Sorry, I haven't been taught the answer to that question :("./n"""/n${context}/n"""/n`,
+      },
+      ...reqBody.messages,
+    ];
+
+    const messages = removeOldMessagesFromConversation(conversation);
+
     const response = await openai.chat.completions
       .create({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: MESSAGE_ROLES.SYSTEM,
-            content: `You are a helpful chatbot named KezBot. Your job is to answer questions about a woman named Keziah Rackley-Gale. You will be provided with a document about Keziah (delimited by triple quotes) and a question. Your task is to answer the question using only the provided document. If the document does not contain the information needed to answer the question then simply write: "Sorry, I haven't been taught the answer to that question :("./n"""/n${context}/n"""/n`,
-          },
-          ...reqBody.messages,
-        ],
+        model: GPT_MODEL.NAME,
+        messages,
         stream: true,
-        max_tokens: 512,
+        max_tokens: GPT_MODEL.MAX_TOKEN_COUNT,
         temperature: 0,
         frequency_penalty: -2,
         presence_penalty: 0,
         n: 1,
-        stop: []
+        stop: [],
       })
       .asResponse();
 

@@ -13,3 +13,8 @@ export const THEME = {
   LIGHT: "light",
   DARK: "dark",
 } as const;
+
+export const GPT_MODEL = {
+  NAME: "gpt-3.5-turbo",
+  MAX_TOKEN_COUNT: 512,
+} as const;
