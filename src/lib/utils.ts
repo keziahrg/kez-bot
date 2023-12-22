@@ -2,9 +2,9 @@ import prisma from "@/lib/prisma";
 import { Document } from "@prisma/client";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { encodingForModel } from "js-tiktoken";
 import { GPT_MODEL } from "./constants";
 import { MessageProps } from "@/components/Message";
+import { encode } from "gpt-tokenizer/model/gpt-3.5-turbo";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -27,10 +27,8 @@ export const getContextDocumentsByEmbedding = async (embedding: number[]) => {
   return documents as Array<Document & { similarity: number }>;
 };
 
-const tokenizer = encodingForModel(GPT_MODEL.NAME);
-
 export const getTokenCount = (string: string) => {
-  return tokenizer.encode(string).length;
+  return encode(string).length;
 };
 
 export const removeOldMessagesFromConversation = (
