@@ -57,35 +57,6 @@ export async function POST(req: Request) {
       })
       .asResponse();
 
-    if (!response.ok) {
-      if (response.body) {
-        const reader = response.body.getReader();
-        const stream = new ReadableStream({
-          async start(controller) {
-            const { done, value } = await reader.read();
-            if (!done) {
-              const errorText = new TextDecoder().decode(value);
-              controller.error(new Error(`Response error: ${errorText}`));
-            }
-          },
-        });
-
-        return new Response(stream, {
-          headers: { "Content-Type": "text/event-stream" },
-        });
-      } else {
-        const stream = new ReadableStream({
-          start(controller) {
-            controller.error(new Error("Response error: No response body"));
-          },
-        });
-
-        return new Response(stream, {
-          headers: { "Content-Type": "text/event-stream" },
-        });
-      }
-    }
-
     const responseBodyStream = response.body || createEmptyReadableStream();
 
     const stream = responseBodyStream.pipeThrough(
