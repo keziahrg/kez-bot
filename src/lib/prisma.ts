@@ -1,23 +1,19 @@
-import { PrismaClient } from "@prisma/client/edge";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaClient } from "@prisma/client";
 
-const createAcceleratedPrismaClient = () => {
+const createPrismaClient = () => {
   return new PrismaClient({
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
-  }).$extends(withAccelerate());
+  });
 };
 
-// Define a type for the accelerated client.
-type PrismaClientAccelerated = ReturnType<typeof createAcceleratedPrismaClient>;
-
 declare global {
-  var prisma: PrismaClientAccelerated | undefined;
+  var prisma: PrismaClient | undefined;
 }
 
-const prisma = global.prisma || createAcceleratedPrismaClient();
+const prisma = global.prisma || createPrismaClient();
 
 if (process.env.NODE_ENV === "development") global.prisma = prisma;
 
