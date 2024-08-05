@@ -9,6 +9,7 @@ export default function Head() {
         content="A custom GPT-3.5-turbo chatbot that's ready to answer all your questions about me. Built with OpenAI, Vercel Postgres, PG Vector, Prisma, Next.js and Tailwind CSS 🤖"
       />
       <link rel="icon" href="/favicon.svg" />
+      <meta name="robots" content="noindex" />
     </>
   );
 }
